@@ -2528,10 +2528,103 @@
   .filter-menu-action:hover { background:#f7f7ff !important; }
   .pm-focus-bu-title { font-weight:900; font-size:12px; color:#111827; margin:10px 0 4px; text-transform:uppercase; letter-spacing:.06em; }
 
+
+  /* === Pantalla de contraseña simple === */
+  .lock-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: linear-gradient(135deg, #f6f5f2 0%, #ecebe6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    font-family: Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .lock-screen.hidden { display: none !important; }
+  .lock-card {
+    width: min(92vw, 390px);
+    background: #ffffff;
+    border: 1px solid #edebe9;
+    border-radius: 16px;
+    box-shadow: 0 28px 60px rgba(28,24,21,.18), 0 8px 20px rgba(28,24,21,.08);
+    padding: 28px;
+    text-align: center;
+  }
+  .lock-brand {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6264a7 0%, #464775 100%);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    margin-bottom: 14px;
+    letter-spacing: -.03em;
+  }
+  .lock-card h1 {
+    font-size: 19px;
+    margin: 0 0 4px;
+    color: #111827;
+  }
+  .lock-card p {
+    margin: 0 0 18px;
+    color: #605e5c;
+    font-size: 13px;
+  }
+  .lock-card input {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #d8d2c3;
+    border-radius: 8px;
+    padding: 0 12px;
+    font: inherit;
+    color: #111827;
+    background: #fff;
+    margin-bottom: 10px;
+  }
+  .lock-card input:focus {
+    outline: none;
+    border-color: #6264a7;
+    box-shadow: 0 0 0 3px #f0f0ff;
+  }
+  .lock-card button {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #5b5fc7;
+    background: #5b5fc7;
+    color: white;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .lock-card button:hover { background: #464775; border-color: #464775; }
+  .lock-error {
+    display: none;
+    margin-top: 10px;
+    color: #a4262c;
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+  .lock-error.show { display: block; }
+
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+
+<div id="lockScreen" class="lock-screen">
+  <div class="lock-card">
+    <div class="lock-brand">GS</div>
+    <h1>Global Sourcing</h1>
+    <p>Ingresá la contraseña para continuar</p>
+    <input id="appPassword" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key === 'Enter') unlockApp()" />
+    <button type="button" onclick="unlockApp()">Entrar</button>
+    <div id="passwordError" class="lock-error">Contraseña incorrecta</div>
+  </div>
+</div>
 
 <header>
   <div class="brand">
@@ -2871,6 +2964,34 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
+const APP_PASSWORD = 'goso2026';
+
+function unlockApp() {
+  const input = document.getElementById('appPassword');
+  const error = document.getElementById('passwordError');
+  const value = input ? input.value : '';
+  if (value === APP_PASSWORD) {
+    sessionStorage.setItem('goso_unlocked', '1');
+    const lock = document.getElementById('lockScreen');
+    if (lock) lock.classList.add('hidden');
+    if (error) error.classList.remove('show');
+  } else {
+    if (error) error.classList.add('show');
+    if (input) { input.value = ''; input.focus(); }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const lock = document.getElementById('lockScreen');
+  const input = document.getElementById('appPassword');
+  if (sessionStorage.getItem('goso_unlocked') === '1') {
+    if (lock) lock.classList.add('hidden');
+  } else if (input) {
+    setTimeout(() => input.focus(), 80);
+  }
+});
+
 /* =====================================================================
    CELLAR & SONS — Project Management
    Single-file HTML tool with kanban, dependencies, and meeting minutes
@@ -3045,214 +3166,9 @@ function normalizeState(s) {
 }
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  scheduleDriveAutosave();
 }
 
 
-/* ---------- Google Drive sync (silent, no visible status) ----------
-   Guarda el estado completo del HTML en un archivo JSON de Google Drive.
-   No muestra indicadores fijos en pantalla; se maneja desde el menú Exportar. */
-const GOOGLE_CLIENT_ID = '717493258053-h7uguhiipjjq2norl9tc7gc0fqokm3hk.apps.googleusercontent.com';
-const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-const DRIVE_DATA_FILENAME = 'global_sourcing_pm_data.json';
-const DRIVE_ENABLED_KEY = 'gs_drive_enabled_v1';
-const DRIVE_FILE_ID_KEY = 'gs_drive_file_id_v1';
-
-let driveTokenClient = null;
-let driveAccessToken = '';
-let driveAutosaveTimer = null;
-let driveSaveInFlight = false;
-let drivePendingSave = false;
-
-function initDriveTokenClient() {
-  if (driveTokenClient || !window.google || !google.accounts || !google.accounts.oauth2) return !!driveTokenClient;
-  driveTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: GOOGLE_DRIVE_SCOPE,
-    callback: (resp) => {
-      if (resp && resp.access_token) driveAccessToken = resp.access_token;
-    }
-  });
-  return true;
-}
-
-function requestDriveToken({ interactive = false } = {}) {
-  return new Promise((resolve, reject) => {
-    const started = Date.now();
-    const wait = () => {
-      if (initDriveTokenClient()) {
-        driveTokenClient.callback = (resp) => {
-          if (resp && resp.error) return reject(new Error(resp.error));
-          driveAccessToken = resp && resp.access_token ? resp.access_token : '';
-          if (!driveAccessToken) return reject(new Error('No se obtuvo permiso de Google Drive.'));
-          localStorage.setItem(DRIVE_ENABLED_KEY, '1');
-          resolve(driveAccessToken);
-        };
-        try {
-          driveTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
-        } catch (err) {
-          reject(err);
-        }
-      } else if (Date.now() - started < 7000) {
-        setTimeout(wait, 120);
-      } else {
-        reject(new Error('No se pudo cargar Google Identity Services.'));
-      }
-    };
-    wait();
-  });
-}
-
-function escapeDriveQueryString(value) {
-  return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-async function driveFetch(url, options = {}) {
-  if (!driveAccessToken) await requestDriveToken({ interactive: false });
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: 'Bearer ' + driveAccessToken
-    }
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Google Drive respondió ${res.status}: ${text || res.statusText}`);
-  }
-  return res;
-}
-
-async function findDriveDataFile() {
-  const savedId = localStorage.getItem(DRIVE_FILE_ID_KEY);
-  if (savedId) {
-    try {
-      const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(savedId)}?fields=id,name,modifiedTime,shared,webViewLink`);
-      return await res.json();
-    } catch (err) {
-      localStorage.removeItem(DRIVE_FILE_ID_KEY);
-    }
-  }
-  const q = `name='${escapeDriveQueryString(DRIVE_DATA_FILENAME)}' and trashed=false`;
-  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name,modifiedTime,shared,webViewLink)&orderBy=modifiedTime desc&pageSize=10`;
-  const res = await driveFetch(url);
-  const data = await res.json();
-  const file = data.files && data.files[0];
-  if (file) localStorage.setItem(DRIVE_FILE_ID_KEY, file.id);
-  return file || null;
-}
-
-async function createDriveDataFile(initialState = state) {
-  const boundary = 'gs_boundary_' + id();
-  const metadata = {
-    name: DRIVE_DATA_FILENAME,
-    mimeType: 'application/json',
-    description: 'Datos del gestor Global Sourcing PM. No editar manualmente.'
-  };
-  const bodyState = { ...initialState, app: 'Global Sourcing PM', updatedAt: new Date().toISOString() };
-  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(bodyState, null, 2)}\r\n--${boundary}--`;
-  const res = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,modifiedTime', {
-    method: 'POST',
-    headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
-    body
-  });
-  const file = await res.json();
-  localStorage.setItem(DRIVE_FILE_ID_KEY, file.id);
-  return file;
-}
-
-async function ensureDriveDataFile() {
-  let file = await findDriveDataFile();
-  if (!file) file = await createDriveDataFile(state);
-  return file;
-}
-
-async function loadStateFromDrive({ interactive = true } = {}) {
-  await requestDriveToken({ interactive });
-  const file = await ensureDriveDataFile();
-  const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media`);
-  const data = await res.json();
-  const nextState = data && data.boards ? data : (data && data.state && data.state.boards ? data.state : null);
-  if (!nextState) throw new Error('El archivo de Drive no tiene un formato válido para este gestor.');
-  state = normalizeState(nextState);
-  if (!state.currentBoardId && state.boards[0]) state.currentBoardId = state.boards[0].id;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  render();
-  return state;
-}
-
-async function saveStateToDrive({ interactive = false } = {}) {
-  if (driveSaveInFlight) { drivePendingSave = true; return; }
-  driveSaveInFlight = true;
-  try {
-    await requestDriveToken({ interactive });
-    const file = await ensureDriveDataFile();
-    const bodyState = { ...state, app: 'Global Sourcing PM', updatedAt: new Date().toISOString() };
-    await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(file.id)}?uploadType=media`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-      body: JSON.stringify(bodyState, null, 2)
-    });
-  } finally {
-    driveSaveInFlight = false;
-    if (drivePendingSave) {
-      drivePendingSave = false;
-      scheduleDriveAutosave(800);
-    }
-  }
-}
-
-function scheduleDriveAutosave(delay = 1200) {
-  if (localStorage.getItem(DRIVE_ENABLED_KEY) !== '1') return;
-  clearTimeout(driveAutosaveTimer);
-  driveAutosaveTimer = setTimeout(() => {
-    saveStateToDrive({ interactive: false }).catch(err => console.warn('No se pudo guardar en Drive:', err));
-  }, delay);
-}
-
-async function connectGoogleDriveAndLoad() {
-  try {
-    await loadStateFromDrive({ interactive: true });
-    toast('Google Drive conectado');
-  } catch (err) {
-    alert('No pude conectar con Google Drive: ' + err.message);
-  }
-}
-
-async function saveGoogleDriveNow() {
-  try {
-    await saveStateToDrive({ interactive: true });
-    toast('Guardado en Google Drive');
-  } catch (err) {
-    alert('No pude guardar en Google Drive: ' + err.message);
-  }
-}
-
-async function loadGoogleDriveNow() {
-  try {
-    await loadStateFromDrive({ interactive: true });
-    toast('Datos cargados desde Google Drive');
-  } catch (err) {
-    alert('No pude cargar desde Google Drive: ' + err.message);
-  }
-}
-
-async function openDriveFileById() {
-  const raw = prompt('Pegá el ID del archivo JSON compartido de Google Drive:');
-  const fileId = (raw || '').trim();
-  if (!fileId) return;
-  localStorage.setItem(DRIVE_FILE_ID_KEY, fileId);
-  await loadGoogleDriveNow();
-}
-
-// Si ya se conectó alguna vez, intenta reconectar en silencio al abrir.
-window.addEventListener('load', () => {
-  if (localStorage.getItem(DRIVE_ENABLED_KEY) === '1') {
-    setTimeout(() => {
-      loadStateFromDrive({ interactive: false }).catch(err => console.warn('No se pudo sincronizar silenciosamente con Drive:', err));
-    }, 900);
-  }
-});
 function seedState() {
   const boardId = 'b_' + id();
   const cols = [
@@ -4767,12 +4683,7 @@ document.getElementById('btn-export').onclick = (e) => {
   const r = e.currentTarget.getBoundingClientRect();
   showCtxMenu(r.right - 260, r.bottom + 6, [
     { label: 'Exportar gestor JSON', fn: exportBoardJSON },
-    { label: 'Exportar resumen HTML', fn: exportTeamHTML },
-    { sep: true },
-    { label: 'Conectar Drive', fn: connectGoogleDriveAndLoad },
-    { label: 'Guardar en Drive ahora', fn: saveGoogleDriveNow },
-    { label: 'Cargar desde Drive', fn: loadGoogleDriveNow },
-    { label: 'Abrir JSON compartido', fn: openDriveFileById }
+    { label: 'Exportar resumen HTML', fn: exportTeamHTML }
   ]);
 };
 document.getElementById('btn-import').onclick = () => {
