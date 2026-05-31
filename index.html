@@ -2963,6 +2963,7 @@
 <div class="ctx-menu" id="ctx-menu"></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
 const APP_PASSWORD = 'goso2026';
@@ -2976,6 +2977,7 @@ function unlockApp() {
     const lock = document.getElementById('lockScreen');
     if (lock) lock.classList.add('hidden');
     if (error) error.classList.remove('show');
+    initSupabaseAfterUnlock();
   } else {
     if (error) error.classList.add('show');
     if (input) { input.value = ''; input.focus(); }
@@ -2987,6 +2989,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('appPassword');
   if (sessionStorage.getItem('goso_unlocked') === '1') {
     if (lock) lock.classList.add('hidden');
+    initSupabaseAfterUnlock();
   } else if (input) {
     setTimeout(() => input.focus(), 80);
   }
@@ -3164,8 +3167,217 @@ function normalizeState(s) {
   });
   return s;
 }
-function saveState() {
+function localSaveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function saveState() {
+  localSaveState();
+  scheduleSupabaseAutosave();
+}
+
+
+/* ---------- Supabase sync ----------
+   Base compartida para que más de una persona trabaje sobre los mismos datos.
+   Usa una sola fila JSON con control de versión: si alguien guardó antes,
+   esta app no pisa el cambio y avisa conflicto.
+*/
+const SUPABASE_URL = 'https://hrzoufmqmqwvhwginaxa.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ejg_y96F6SFznGmh2-J9dw_AYOvNOnQ';
+const SUPABASE_TABLE = 'goso_state';
+const SUPABASE_ROW_ID = 'main';
+
+let supabaseClient = null;
+let supabaseReady = false;
+let supabaseLoadStarted = false;
+let supabaseVersion = null;
+let supabaseAutosaveTimer = null;
+let supabaseSaveInFlight = false;
+let supabasePendingSave = false;
+let supabaseConflictNotified = false;
+let supabaseChannel = null;
+
+function ensureSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  if (!window.supabase || !window.supabase.createClient) {
+    throw new Error('No se pudo cargar la librería de Supabase. Revisá tu conexión a internet.');
+  }
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return supabaseClient;
+}
+
+async function initSupabaseAfterUnlock() {
+  if (supabaseLoadStarted) return;
+  supabaseLoadStarted = true;
+  try {
+    await loadStateFromSupabase();
+    subscribeToSupabaseChanges();
+  } catch (err) {
+    console.error('Supabase error:', err);
+    supabaseLoadStarted = false;
+    alert('No pude conectar con Supabase: ' + err.message);
+  }
+}
+
+async function getSupabaseRow() {
+  const client = ensureSupabaseClient();
+  let { data: row, error } = await client
+    .from(SUPABASE_TABLE)
+    .select('id,data,version,updated_at')
+    .eq('id', SUPABASE_ROW_ID)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!row) {
+    const inserted = await client
+      .from(SUPABASE_TABLE)
+      .insert({ id: SUPABASE_ROW_ID, data: {}, version: 1 })
+      .select('id,data,version,updated_at')
+      .single();
+    if (inserted.error) throw inserted.error;
+    row = inserted.data;
+  }
+
+  return row;
+}
+
+function isValidRemoteState(remote) {
+  return remote && Array.isArray(remote.boards) && remote.boards.length > 0;
+}
+
+async function loadStateFromSupabase() {
+  const row = await getSupabaseRow();
+  supabaseVersion = row.version || 1;
+  supabaseReady = true;
+
+  if (isValidRemoteState(row.data)) {
+    state = normalizeState(row.data);
+    if (!state.currentBoardId && state.boards[0]) state.currentBoardId = state.boards[0].id;
+    localSaveState();
+    render();
+    toast('Datos cargados desde Supabase');
+    return;
+  }
+
+  const shouldUploadLocal = confirm(
+    'Supabase está vacío. ¿Querés usar los datos de este navegador como base compartida inicial?\n\n' +
+    'Elegí Aceptar si este navegador tiene la versión correcta de tus tareas.'
+  );
+
+  if (shouldUploadLocal) {
+    await saveStateToSupabase({ forceNow: true });
+    toast('Base inicial cargada en Supabase');
+  } else {
+    toast('Supabase conectado. No se cargó base inicial.');
+  }
+}
+
+function scheduleSupabaseAutosave(delay = 900) {
+  if (!supabaseReady || supabaseLoadStarted === false) return;
+  clearTimeout(supabaseAutosaveTimer);
+  supabaseAutosaveTimer = setTimeout(() => {
+    saveStateToSupabase().catch(err => {
+      console.error('No se pudo guardar en Supabase:', err);
+    });
+  }, delay);
+}
+
+async function saveStateToSupabase({ forceNow = false } = {}) {
+  if (!supabaseReady) return;
+  if (supabaseSaveInFlight) {
+    supabasePendingSave = true;
+    return;
+  }
+
+  supabaseSaveInFlight = true;
+  try {
+    const client = ensureSupabaseClient();
+    if (!supabaseVersion) {
+      const row = await getSupabaseRow();
+      supabaseVersion = row.version || 1;
+    }
+
+    const nextVersion = (supabaseVersion || 1) + 1;
+    const { data: updated, error } = await client
+      .from(SUPABASE_TABLE)
+      .update({
+        data: state,
+        version: nextVersion,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', SUPABASE_ROW_ID)
+      .eq('version', supabaseVersion)
+      .select('version,updated_at')
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!updated) {
+      await handleSupabaseConflict();
+      return;
+    }
+
+    supabaseVersion = updated.version;
+    supabaseConflictNotified = false;
+    if (forceNow) toast('Guardado en Supabase');
+  } finally {
+    supabaseSaveInFlight = false;
+    if (supabasePendingSave) {
+      supabasePendingSave = false;
+      scheduleSupabaseAutosave(500);
+    }
+  }
+}
+
+async function handleSupabaseConflict() {
+  if (supabaseConflictNotified) return;
+  supabaseConflictNotified = true;
+  const reload = confirm(
+    'Otra persona guardó cambios antes que vos. Para no pisarlos, este cambio no se guardó en Supabase.\n\n' +
+    '¿Querés cargar ahora la versión más reciente de Supabase?'
+  );
+  if (reload) {
+    const row = await getSupabaseRow();
+    if (isValidRemoteState(row.data)) {
+      state = normalizeState(row.data);
+      supabaseVersion = row.version || supabaseVersion;
+      localSaveState();
+      closeTaskModal();
+      render();
+      toast('Versión actualizada desde Supabase');
+    }
+  }
+}
+
+function subscribeToSupabaseChanges() {
+  if (!supabaseClient || supabaseChannel) return;
+  try {
+    supabaseChannel = supabaseClient
+      .channel('goso_state_main_changes')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: SUPABASE_TABLE, filter: 'id=eq.' + SUPABASE_ROW_ID },
+        payload => {
+          const next = payload && payload.new;
+          if (!next || !isValidRemoteState(next.data)) return;
+          if (supabaseVersion && next.version <= supabaseVersion) return;
+
+          if (editingTaskId) {
+            toast('Hay cambios nuevos en Supabase. Cerrá la tarea y recargá si querés actualizarlos.');
+            return;
+          }
+
+          state = normalizeState(next.data);
+          supabaseVersion = next.version;
+          localSaveState();
+          render();
+          toast('Cambios actualizados desde Supabase');
+        }
+      )
+      .subscribe();
+  } catch (err) {
+    console.warn('No se pudo activar Realtime de Supabase:', err);
+  }
 }
 
 
