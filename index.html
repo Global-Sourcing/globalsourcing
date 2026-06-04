@@ -1187,6 +1187,20 @@
     color: var(--wine);
     background: var(--paper);
   }
+  .assignee-row select[multiple] {
+    min-height: 112px;
+    padding: 5px 7px;
+  }
+  .assignee-row select[multiple] option {
+    padding: 4px 6px;
+  }
+  .assignee-help {
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    line-height: 1.25;
+  }
+
 
   /* Members modal */
   .members-list {
@@ -2996,6 +3010,108 @@
   .lock-card button:hover { background: var(--wine-deep); border-color: var(--wine-deep); }
   .lock-error { color: var(--wine); }
 
+
+
+
+  /* === Fix v22: responsable acumulativo limpio + Gantt legible + paneo === */
+  #task-modal .assignee-row { align-items: stretch !important; }
+  #t-assignee-select[hidden] { display:none !important; }
+  #task-modal .assignee-picker { position: relative; flex: 1 1 auto; min-width: 0; }
+  #task-modal .assignee-picker-btn {
+    width: 100%; min-height: 30px; border: 1px solid var(--line); background: var(--paper-2);
+    border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: 11.8px; color: var(--ink);
+    display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; text-align:left;
+  }
+  #task-modal .assignee-picker-btn:hover, #task-modal .assignee-picker.open .assignee-picker-btn {
+    border-color: var(--wine); background: var(--paper); box-shadow: 0 0 0 3px var(--wine-tint);
+  }
+  #task-modal #assignee-picker-label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #task-modal .assignee-picker-caret { color: var(--ink-mute); font-weight: 800; }
+  #task-modal .assignee-picker-menu {
+    position:absolute; z-index: 350; left:0; right:0; top: calc(100% + 4px); display:none;
+    max-height: 210px; overflow:auto; padding: 5px; background: var(--paper); border:1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow-lg);
+  }
+  #task-modal .assignee-picker.open .assignee-picker-menu { display:block; }
+  #task-modal .assignee-option {
+    width:100%; display:flex; align-items:center; gap:8px; border:0; background:transparent; color:var(--ink);
+    border-radius:6px; padding:7px 8px; text-align:left; font:inherit; font-size:12px; cursor:pointer;
+  }
+  #task-modal .assignee-option:hover { background: var(--bg-2); }
+  #task-modal .assignee-option.selected { background: var(--wine-tint); font-weight:700; }
+  #task-modal .assignee-option .check { width:16px; color: var(--wine); font-weight:900; }
+  #task-modal .assignee-help { font-size:10.5px; color:var(--ink-mute); line-height:1.25; margin-top:4px; }
+
+  .gantt-row { min-height: 48px !important; }
+  .gantt-name { padding: 8px 9px !important; }
+  .gantt-cell { overflow: visible !important; padding: 0 3px !important; }
+  .gantt-pill {
+    position:absolute !important; left:4px; top:50%; transform:translateY(-50%);
+    width: max-content; max-width: 260px; min-width: 120px; height: 25px;
+    display:inline-flex !important; align-items:center; justify-content:flex-start;
+    padding: 4px 9px !important; text-align:left !important; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    z-index: 6;
+  }
+  .gantt-pill:hover { z-index: 20; max-width: 420px; }
+  .gantt-board { padding-bottom: 24px; }
+  .cards, .column, .card { touch-action: none; }
+
+  .card-drag-handle {
+    position:absolute; top:7px; right:30px; width:18px; height:18px;
+    display:flex; align-items:center; justify-content:center; border:1px solid var(--line);
+    border-radius:4px; background:var(--paper); color:var(--ink-mute); cursor:grab; opacity:0;
+    font-size:12px; font-weight:800; line-height:1; transition: opacity .12s, background .12s;
+  }
+  .card:hover .card-drag-handle { opacity:1; }
+  .card-drag-handle:hover { background:var(--wine-tint); color:var(--wine); border-color:var(--wine); }
+  .card-drag-handle:active { cursor:grabbing; }
+
+  /* === Fix v23: Gantt alineado + responsables cortos + paneo reforzado === */
+  .gantt-main {
+    cursor: grab !important;
+    overflow: auto !important;
+    padding-left: 0 !important;
+  }
+  .gantt-main.panning, .gantt-main.panning * { cursor: grabbing !important; user-select: none !important; }
+  .gantt-board {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+  .gantt-table, .gantt-row {
+    grid-template-columns: 250px repeat(var(--day-count), 52px) !important;
+  }
+  .gantt-corner, .gantt-name {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    background: var(--paper) !important;
+  }
+  .gantt-corner { z-index: 12 !important; }
+  .gantt-row { min-height: 44px !important; }
+  .gantt-cell { overflow: visible !important; }
+  .gantt-pill {
+    min-width: 72px !important;
+    max-width: 140px !important;
+    height: 23px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 10px !important;
+    padding: 3px 7px !important;
+  }
+  .gantt-pill:hover { max-width: 220px !important; }
+  .gantt-assignee-mini {
+    display:block;
+    color: var(--wine-deep) !important;
+    font-weight: 700;
+    margin-top: 2px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .board-drag-pan-ready { cursor: grab !important; }
+  .board-drag-pan-ready.panning, .board-drag-pan-ready.panning * { cursor: grabbing !important; user-select: none !important; }
+
 </style>
 </head>
 <body>
@@ -3130,6 +3246,7 @@
 <div class="selection-bar" id="selection-bar">
   <span class="sel-count" id="sel-count">0 tareas seleccionadas</span>
   <div class="sel-divider"></div>
+  <button id="sel-select-all">Seleccionar todas</button>
   <button class="btn-clear" id="sel-clear">Limpiar</button>
   <button id="sel-minute">
     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z"/><path d="m2 4 6 5 6-5"/></svg>
@@ -3185,13 +3302,21 @@
             <div class="field">
               <label>Asignado a</label>
               <div class="assignee-row">
-                <select id="t-assignee-select">
+                <select id="t-assignee-select" multiple hidden aria-hidden="true">
                   <option value="">— Sin asignar —</option>
                 </select>
+                <div class="assignee-picker" id="assignee-picker">
+                  <button type="button" class="assignee-picker-btn" id="assignee-picker-btn">
+                    <span id="assignee-picker-label">Sin asignar</span>
+                    <span class="assignee-picker-caret">⌄</span>
+                  </button>
+                  <div class="assignee-picker-menu" id="assignee-picker-menu"></div>
+                </div>
                 <button type="button" class="assignee-manage" id="t-manage-members" title="Administrar integrantes del gestor">
                   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M3 13c0-2.5 2.2-4 5-4s5 1.5 5 4"/></svg>
                 </button>
               </div>
+              <div class="assignee-help">Selección acumulativa: hacé click en cada nombre para sumar o quitar responsables.</div>
             </div>
           </div>
           <div class="field completed-field" id="t-completed-wrap">
@@ -3423,6 +3548,45 @@ function currentBoard() {
 }
 
 
+function getTaskAssignees(task) {
+  if (!task) return [];
+  const fromArray = Array.isArray(task.assignees)
+    ? task.assignees.map(x => String(x || '').trim()).filter(Boolean)
+    : [];
+  const fromString = task.assignee
+    ? String(task.assignee).split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+  const merged = fromArray.length ? fromArray : fromString;
+  return [...new Set(merged)].sort((a,b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+}
+
+function setTaskAssignees(task, assignees) {
+  const clean = [...new Set((assignees || []).map(x => String(x || '').trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  task.assignees = clean;
+  // Compatibilidad con versiones/exportaciones anteriores: queda un string legible.
+  task.assignee = clean.join(', ');
+}
+
+function taskAssigneeLabel(task, emptyLabel = 'Sin responsable') {
+  const names = getTaskAssignees(task);
+  return names.length ? names.join(', ') : emptyLabel;
+}
+
+function shortAssigneeLabel(task, emptyLabel = 'Sin resp.') {
+  const names = getTaskAssignees(task);
+  if (!names.length) return emptyLabel;
+  if (names.length === 1) return names[0];
+  const first = names[0];
+  return `${first} +${names.length - 1}`;
+}
+
+function taskAssigneeValues(task) {
+  const names = getTaskAssignees(task);
+  return names.length ? names : ['__unassigned__'];
+}
+
+
 function hasPendingDependencies(task, board = currentBoard()) {
   if (!task || task.status === 'done') return false;
   return (task.deps || []).some(depId => {
@@ -3535,7 +3699,7 @@ function normalizeState(s) {
     if (!Array.isArray(b.members)) {
       // Seed members from existing assignees on this board
       const set = new Set();
-      (b.tasks || []).forEach(t => { if (t.assignee && t.assignee.trim()) set.add(t.assignee.trim()); });
+      (b.tasks || []).forEach(t => { getTaskAssignees(t).forEach(name => set.add(name)); });
       b.members = [...set];
     }
     (b.tasks || []).forEach(t => {
@@ -3545,6 +3709,7 @@ function normalizeState(s) {
       if (t.status === 'done' && !t.completedDate) t.completedDate = todayISO();
       if (t.status !== 'done') t.completedDate = '';
       if (typeof t.meetingNote !== 'string') t.meetingNote = '';
+      setTaskAssignees(t, getTaskAssignees(t));
       if (!Array.isArray(t.subtasks)) t.subtasks = [];
       if (!Array.isArray(t.tags)) t.tags = [];
       if (!Array.isArray(t.deps)) t.deps = [];
@@ -3867,7 +4032,7 @@ function focusSummaryLine(t, board, opts = {}) {
   const deposito = col ? col.name : 'Sin depósito';
   const parts = [];
   if (!opts.omitDeposito) parts.push(deposito);
-  parts.push(t.assignee || 'Sin responsable');
+  parts.push(taskAssigneeLabel(t));
   parts.push(analysisTaskDateMeta(t));
   const dep = dependencyInfoText(t, board);
   if (dep) parts.push(dep);
@@ -4191,6 +4356,33 @@ function renderColumn(col) {
     }
   });
 
+
+  ['dragover','drop'].forEach(evtName => {
+    cardsEl.addEventListener(evtName, (e) => {
+      if (evtName === 'dragover') {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        wrap.classList.add('drag-over');
+      } else {
+        const taskId = e.dataTransfer.getData('text/task-id') || e.dataTransfer.getData('text/plain');
+        if (taskId) {
+          e.preventDefault();
+          e.stopPropagation();
+          wrap.classList.remove('drag-over');
+          const b = currentBoard();
+          const t = b.tasks.find(x => x.id === taskId);
+          if (t) {
+            const fromColId = t.colId;
+            t.colId = col.id;
+            saveState();
+            if (fromColId !== col.id) toast(`Tarea movida a ${col.name}`);
+            render();
+          }
+        }
+      }
+    });
+  });
+
   wrap.querySelector('.add-card').addEventListener('click', () => {
     const b = currentBoard();
     const task = sampleTask(col.id, '', []);
@@ -4207,7 +4399,7 @@ function renderCard(t) {
   el.className = 'card status-' + t.status;
   if (selectedTasks.has(t.id)) el.classList.add('selected');
   if (!cardMatchesFilters(t)) el.classList.add('hidden-by-filter');
-  el.draggable = true;
+  el.draggable = false;
   el.dataset.taskId = t.id;
 
   const tagsHtml = (t.tags || []).map(tag =>
@@ -4227,15 +4419,17 @@ function renderCard(t) {
     return dep && dep.status === 'done';
   });
 
-  const assigneeHtml = t.assignee
+  const assignees = getTaskAssignees(t);
+  const assigneeHtml = assignees.length
     ? `<span class="meta-assignee">
-        <span class="assignee-avatar ${avatarColorClass(t.assignee)}">${escapeHtml(initials(t.assignee))}</span>
-        <span class="meta-assignee-name">${escapeHtml(t.assignee)}</span>
+        ${assignees.slice(0, 3).map(name => `<span class="assignee-avatar ${avatarColorClass(name)}" title="${escapeAttr(name)}">${escapeHtml(initials(name))}</span>`).join('')}
+        <span class="meta-assignee-name">${escapeHtml(assignees.join(', '))}</span>
       </span>`
     : '';
 
   el.innerHTML = `
     <div class="card-select" title="Seleccionar para minuta"></div>
+    <div class="card-drag-handle" title="Arrastrar tarea a otro depósito">↕</div>
     <div class="card-topline">
       <span class="priority-badge priority-${t.priority || 'medium'}">${priority.label}</span>
       ${t.completedDate ? `<span class="completed-date">Hecho ${formatDate(t.completedDate)}</span>` : ''}
@@ -4261,6 +4455,15 @@ function renderCard(t) {
       </span>` : ''}
     </div>
   `;
+
+  const dragHandle = el.querySelector('.card-drag-handle');
+  if (dragHandle) {
+    dragHandle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      el.draggable = true;
+    });
+    dragHandle.addEventListener('mouseup', () => { setTimeout(() => { el.draggable = false; }, 0); });
+  }
 
   el.querySelector('.card-check').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -4297,13 +4500,14 @@ function renderCard(t) {
   });
 
   el.addEventListener('dragstart', e => {
+    if (!el.draggable) { e.preventDefault(); return; }
     e.stopPropagation();
     el.classList.add('dragging');
     e.dataTransfer.setData('text/task-id', t.id);
     e.dataTransfer.setData('text/plain', t.id);
     e.dataTransfer.effectAllowed = 'move';
   });
-  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  el.addEventListener('dragend', () => { el.classList.remove('dragging'); el.draggable = false; });
 
   return el;
 }
@@ -4322,13 +4526,13 @@ function avatarColorClass(name) {
 function cardMatchesFilters(t) {
   if (filterState.search) {
     const q = filterState.search.toLowerCase();
-    const haystack = [t.title, t.desc, t.assignee, t.meetingNote, ...(t.tags || []).map(x => x.label)]
+    const haystack = [t.title, t.desc, taskAssigneeLabel(t, ''), t.meetingNote, ...(t.tags || []).map(x => x.label)]
       .filter(Boolean).join(' ').toLowerCase();
     if (!haystack.includes(q)) return false;
   }
   if (filterState.assignees.size > 0) {
-    const a = t.assignee || '__unassigned__';
-    if (!filterState.assignees.has(a)) return false;
+    const values = taskAssigneeValues(t);
+    if (!values.some(a => filterState.assignees.has(a))) return false;
   }
   if (filterState.tags.size > 0) {
     const hasTag = (t.tags || []).some(tag => filterState.tags.has(tag.label));
@@ -4434,7 +4638,7 @@ function openTaskModal(taskId, isNew = false) {
 
   refreshTaskStatusPills(t.status);
 
-  refreshAssigneeSelect(t.assignee);
+  refreshAssigneeSelect(getTaskAssignees(t));
   renderTagsEditor(t);
   renderSubtasksEditor(t);
   renderDepsEditor(t);
@@ -4445,23 +4649,79 @@ function openTaskModal(taskId, isNew = false) {
 
 function refreshAssigneeSelect(currentValue) {
   const sel = document.getElementById('t-assignee-select');
+  const picker = document.getElementById('assignee-picker');
+  const btn = document.getElementById('assignee-picker-btn');
+  const label = document.getElementById('assignee-picker-label');
+  const menu = document.getElementById('assignee-picker-menu');
   const board = currentBoard();
+  const currentValues = Array.isArray(currentValue)
+    ? currentValue.map(x => String(x || '').trim()).filter(Boolean)
+    : String(currentValue || '').split(',').map(x => x.trim()).filter(Boolean);
+  const currentSet = new Set(currentValues);
   sel.innerHTML = '<option value="">— Sin asignar —</option>';
-  (board.members || []).forEach(m => {
+  const members = [...new Set([...(board.members || []), ...currentValues])]
+    .filter(Boolean)
+    .sort((a,b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  members.forEach(m => {
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = m;
+    opt.textContent = (board.members || []).includes(m) ? m : `${m} (no en lista)`;
+    opt.selected = currentSet.has(m);
     sel.appendChild(opt);
   });
-  // If the task has an assignee not in the members list (e.g. legacy), add it
-  if (currentValue && !(board.members || []).includes(currentValue)) {
-    const opt = document.createElement('option');
-    opt.value = currentValue;
-    opt.textContent = currentValue + ' (no en lista)';
-    sel.appendChild(opt);
-  }
-  sel.value = currentValue || '';
+  const emptyOpt = sel.querySelector('option[value=""]');
+  if (emptyOpt) emptyOpt.selected = currentSet.size === 0;
+
+  if (!picker || !btn || !label || !menu) return;
+  picker.classList.remove('open');
+  label.textContent = currentValues.length ? currentValues.join(', ') : '— Sin asignar —';
+  label.title = currentValues.join(', ');
+  menu.innerHTML = '';
+
+  const emptyBtn = document.createElement('button');
+  emptyBtn.type = 'button';
+  emptyBtn.className = 'assignee-option' + (currentSet.size === 0 ? ' selected' : '');
+  emptyBtn.innerHTML = `<span class="check">${currentSet.size === 0 ? '✓' : ''}</span><span>— Sin asignar —</span>`;
+  emptyBtn.onclick = (e) => {
+    e.preventDefault();
+    [...sel.options].forEach(o => o.selected = false);
+    const empty = sel.querySelector('option[value=""]');
+    if (empty) empty.selected = true;
+    commitTaskModalFields(false);
+    const t = currentBoard().tasks.find(x => x.id === editingTaskId);
+    refreshAssigneeSelect(t ? getTaskAssignees(t) : []);
+  };
+  menu.appendChild(emptyBtn);
+
+  members.forEach(m => {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'assignee-option' + (currentSet.has(m) ? ' selected' : '');
+    row.innerHTML = `<span class="check">${currentSet.has(m) ? '✓' : ''}</span><span>${escapeHtml((board.members || []).includes(m) ? m : `${m} (no en lista)`)}</span>`;
+    row.onclick = (e) => {
+      e.preventDefault();
+      const opt = [...sel.options].find(o => o.value === m);
+      if (opt) opt.selected = !opt.selected;
+      const empty = sel.querySelector('option[value=""]');
+      if (empty) empty.selected = false;
+      commitTaskModalFields(false);
+      const t = currentBoard().tasks.find(x => x.id === editingTaskId);
+      refreshAssigneeSelect(t ? getTaskAssignees(t) : []);
+    };
+    menu.appendChild(row);
+  });
+
+  btn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    picker.classList.toggle('open');
+  };
 }
+
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('assignee-picker');
+  if (picker && !picker.contains(e.target)) picker.classList.remove('open');
+});
 
 function refreshTaskStatusPills(status) {
   document.querySelectorAll('#t-status .status-pill').forEach(b => {
@@ -4860,6 +5120,7 @@ function renderDepsEditor(t) {
   picker.innerHTML = '<option value="">+ Vincular a otra tarea…</option>';
   board.tasks.forEach(x => {
     if (x.id === t.id) return;
+    if (x.colId !== t.colId) return;
     if ((t.deps || []).includes(x.id)) return;
     const col = board.columns.find(c => c.id === x.colId);
     const opt = document.createElement('option');
@@ -4918,7 +5179,9 @@ function commitTaskModalFields(rerender = false) {
   t.date = document.getElementById('t-date').value;
   updateTaskDateCounters();
   t.priority = document.getElementById('t-priority').value || 'medium';
-  t.assignee = document.getElementById('t-assignee-select').value;
+  const assigneeSelect = document.getElementById('t-assignee-select');
+  const selectedAssignees = [...assigneeSelect.selectedOptions].map(o => o.value).filter(Boolean);
+  setTaskAssignees(t, selectedAssignees);
   t.meetingNote = document.getElementById('t-meeting-note').value.trim();
   t.createdDate = document.getElementById('t-create-date').value || todayISO();
   const activeStatus = document.querySelector('#t-status .status-pill.active');
@@ -5096,7 +5359,7 @@ function closeMembersModal() {
   // If we came from a task, refresh its assignee dropdown
   if (membersReturnToTask && editingTaskId) {
     const t = currentBoard().tasks.find(x => x.id === editingTaskId);
-    refreshAssigneeSelect(t ? t.assignee : '');
+    refreshAssigneeSelect(t ? getTaskAssignees(t) : []);
   }
   membersReturnToTask = false;
 }
@@ -5333,6 +5596,7 @@ document.getElementById('btn-import').onclick = () => {
 const selectionBar = document.getElementById('selection-bar');
 const selMinuteBtn = document.getElementById('sel-minute');
 const selClearBtn = document.getElementById('sel-clear');
+const selSelectAllBtn = document.getElementById('sel-select-all');
 const selCountEl = document.getElementById('sel-count');
 
 function updateSelectionBar() {
@@ -5349,6 +5613,12 @@ selClearBtn.onclick = () => {
   selectedTasks.clear();
   updateSelectionBar();
   document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+};
+
+if (selSelectAllBtn) selSelectAllBtn.onclick = () => {
+  const board = currentBoard();
+  board.tasks.filter(t => cardMatchesFilters(t)).forEach(t => selectedTasks.add(t.id));
+  render();
 };
 
 selMinuteBtn.onclick = () => {
@@ -5506,12 +5776,12 @@ function setupFilterChip(chipId, menuId, getOptions, stateKey) {
 const f1 = setupFilterChip('filter-assignee', 'filter-assignee-menu', () => {
   const board = currentBoard();
   const assignees = new Set();
-  board.tasks.forEach(t => { if (t.assignee) assignees.add(t.assignee); });
+  board.tasks.forEach(t => { getTaskAssignees(t).forEach(a => assignees.add(a)); });
   (board.members || []).forEach(m => assignees.add(m));
   const sorted = [...assignees].sort((a,b) => a.localeCompare(b, 'es'));
   const opts = sorted.map(a => ({ value: a, label: a }));
   // Add "Sin asignar"
-  if (board.tasks.some(t => !t.assignee)) opts.unshift({ value: '__unassigned__', label: '— Sin asignar —' });
+  if (board.tasks.some(t => getTaskAssignees(t).length === 0)) opts.unshift({ value: '__unassigned__', label: '— Sin asignar —' });
   return opts;
 }, 'assignees');
 
@@ -5666,126 +5936,112 @@ function buildResponsibleSummaryData(board = currentBoard()) {
   const tasks = tasksForWrittenSummary(board);
   const byPerson = new Map();
   tasks.forEach(t => {
-    const name = responsibleLabel(t.assignee);
-    if (!byPerson.has(name)) byPerson.set(name, []);
-    byPerson.get(name).push(t);
+    const names = getTaskAssignees(t);
+    const people = names.length ? names : ['Seguimiento'];
+    people.forEach(name => {
+      if (!byPerson.has(name)) byPerson.set(name, []);
+      byPerson.get(name).push(t);
+    });
   });
   return [...byPerson.entries()]
     .map(([name, personTasks]) => ({ name, tasks: sortTasksForOutput(personTasks) }))
     .sort((a,b) => {
-      if (a.name === 'Sin responsable') return 1;
-      if (b.name === 'Sin responsable') return -1;
-      const av = a.tasks.filter(t => isTaskOverdue(t)).length;
-      const bv = b.tasks.filter(t => isTaskOverdue(t)).length;
-      if (bv !== av) return bv - av;
-      return a.name.localeCompare(b.name, 'es');
+      if (a.name === 'Seguimiento') return 1;
+      if (b.name === 'Seguimiento') return -1;
+      return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
     });
 }
 
 function buildMinuteText() {
   const board = currentBoard();
-  const attendees = document.getElementById('m-attendees').value.trim();
-  const date = document.getElementById('m-date').value;
-  const dateLabel = date ? formatDate(date, true) : formatDate(todayISO(), true);
   const selectedCount = getSelectedTasks().length;
   const groups = buildResponsibleSummaryData(board);
 
   let body = '';
-  body += `Hola,\n\n`;
-  body += `Comparto resumen ejecutivo de ${board.name} al ${dateLabel}.\n`;
-  if (attendees) body += `Asistentes: ${attendees}\n`;
-  body += `\n`;
-  body += `Resumen por responsable\n`;
-  body += `────────────────────────────────────\n`;
-
   if (!groups.length) {
     body += `No hay tareas activas para resumir${selectedCount ? ' entre las tareas seleccionadas' : ''}.\n`;
-  } else {
-    groups.forEach(group => {
-      const active = group.tasks.filter(t => t.status !== 'done');
-      const overdue = active.filter(t => isTaskOverdue(t));
-      const dueSoon = active.filter(t => isTaskDueSoon(t));
-      const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
-      const blocking = active.filter(t => isBlockingTask(t, board));
-      const noDate = active.filter(t => !t.date);
-      body += `\n${group.name}\n`;
-      body += `• ${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
-      if (noDate.length) body += ` · ${noDate.length} sin fecha`;
-      body += `\n`;
-      const focus = personTaskFocus(group.tasks, board);
-      if (focus.length) {
-        body += `• Foco:\n`;
-        focus.forEach(t => {
-          body += `  - ${taskShortLine(t, board)}\n`;
-        });
-      }
-    });
+    return body;
   }
 
-  body += `\nDetalle operativo:\n`;
-  body += `Adjunto el tablero actualizado en HTML para filtrar por responsable, BU, depósito, estado, vencidas, próximas a vencer y tareas bloqueantes.\n\n`;
-  body += `Saludos,\n`;
+  groups.forEach((group, idx) => {
+    if (idx > 0) body += `\n`;
+    const active = group.tasks.filter(t => t.status !== 'done');
+    const overdue = active.filter(t => isTaskOverdue(t));
+    const dueSoon = active.filter(t => isTaskDueSoon(t));
+    const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
+    const blocking = active.filter(t => isBlockingTask(t, board));
+    const noDate = active.filter(t => !t.date);
+    body += `${group.name}\n`;
+    body += `• ${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
+    if (noDate.length) body += ` · ${noDate.length} sin fecha`;
+    body += `\n`;
+    const details = group.name === 'Seguimiento' ? active : (personTaskFocus(group.tasks, board).length ? personTaskFocus(group.tasks, board) : active.slice(0, 6));
+    if (details.length) {
+      body += `• Detalle:\n`;
+      details.forEach(t => {
+        body += `  - ${taskShortLine(t, board)}\n`;
+      });
+    }
+  });
   return body;
 }
 
 function buildMinuteHTML() {
   const board = currentBoard();
-  const attendees = document.getElementById('m-attendees').value.trim();
-  const date = document.getElementById('m-date').value;
-  const dateLabel = date ? formatDate(date, true) : formatDate(todayISO(), true);
   const groups = buildResponsibleSummaryData(board);
 
-  let h = `<div style="font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:11pt;color:#111;line-height:1.45">`;
-  h += `<p>Hola,</p>`;
-  h += `<p>Comparto resumen ejecutivo de <b>${esc(board.name)}</b> al <b>${esc(dateLabel)}</b>.</p>`;
-  if (attendees) h += `<p><b>Asistentes:</b> ${esc(attendees)}</p>`;
-  h += `<h3 style="margin:16px 0 8px;font-size:13pt;color:#222;border-bottom:1px solid #ccc;padding-bottom:4px">Resumen por responsable</h3>`;
+  let h = `<div style="font-family:Calibri, Arial, sans-serif;font-size:12pt;color:#000;line-height:1.35">`;
 
   if (!groups.length) {
-    h += `<p><i>No hay tareas activas para resumir.</i></p>`;
-  } else {
-    groups.forEach(group => {
-      const active = group.tasks.filter(t => t.status !== 'done');
-      const overdue = active.filter(t => isTaskOverdue(t));
-      const dueSoon = active.filter(t => isTaskDueSoon(t));
-      const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
-      const blocking = active.filter(t => isBlockingTask(t, board));
-      const noDate = active.filter(t => !t.date);
-      h += `<div style="margin:12px 0 14px">`;
-      h += `<div style="font-size:12pt;font-weight:700;color:#5e1622;margin-bottom:3px">${esc(group.name)}</div>`;
-      h += `<div style="margin-bottom:5px;color:#333">`;
-      h += `${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
-      if (noDate.length) h += ` · ${noDate.length} sin fecha`;
-      h += `</div>`;
-      const focus = personTaskFocus(group.tasks, board);
-      if (focus.length) {
-        h += `<ul style="margin:4px 0 0 18px;padding-left:14px">`;
-        focus.forEach(t => {
-          const col = columnForTask(t, board);
-          const depInfo = dependencyInfoText(t, board);
-          h += `<li style="margin:4px 0 6px">`;
-          h += `<b>${esc(col ? col.name : 'Sin depósito')}</b> — ${esc(t.title || 'Sin título')} — <span style="color:#333">${esc(analysisTaskDateMeta(t))}</span>`;
-          if (depInfo) h += `<div style="font-size:10pt;color:#666;margin-top:2px">(${esc(depInfo)})</div>`;
-          h += `</li>`;
-        });
-        h += `</ul>`;
-      }
-      h += `</div>`;
-    });
+    h += `<p style="margin:0"><i>No hay tareas activas para resumir.</i></p></div>`;
+    return h;
   }
 
-  h += `<p style="margin-top:16px"><b>Detalle operativo:</b><br>`;
-  h += `Adjunto el tablero actualizado en HTML para filtrar por responsable, BU, depósito, estado, vencidas, próximas a vencer y tareas bloqueantes.</p>`;
-  h += `<p>Saludos,</p></div>`;
+  groups.forEach((group, idx) => {
+    const active = group.tasks.filter(t => t.status !== 'done');
+    const overdue = active.filter(t => isTaskOverdue(t));
+    const dueSoon = active.filter(t => isTaskDueSoon(t));
+    const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
+    const blocking = active.filter(t => isBlockingTask(t, board));
+    const noDate = active.filter(t => !t.date);
+    h += `<div style="margin:${idx ? '12px' : '0'} 0 14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+    h += `<div style="font-size:12pt;font-weight:700;color:#000;margin-bottom:3px">${esc(group.name)}</div>`;
+    h += `<div style="margin-bottom:5px;color:#000">`;
+    h += `${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
+    if (noDate.length) h += ` · ${noDate.length} sin fecha`;
+    h += `</div>`;
+    const details = group.name === 'Seguimiento' ? active : (personTaskFocus(group.tasks, board).length ? personTaskFocus(group.tasks, board) : active.slice(0, 6));
+    if (details.length) {
+      h += `<ul style="margin:4px 0 0 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+      details.forEach(t => {
+        const col = columnForTask(t, board);
+        const depInfo = dependencyInfoText(t, board);
+        h += `<li style="margin:4px 0 6px;color:#000">`;
+        h += `<b>${esc(col ? col.name : 'Sin depósito')}</b> — ${esc(t.title || 'Sin título')} — <span style="color:#000">${esc(analysisTaskDateMeta(t))}</span>`;
+        if (depInfo) h += `<div style="font-size:12pt;color:#000;margin-top:2px">(${esc(depInfo)})</div>`;
+        h += `</li>`;
+      });
+      h += `</ul>`;
+    }
+    h += `</div>`;
+  });
+
+  h += `</div>`;
   return h;
 }
 
-const TEAM_HTML_TEMPLATE = "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Seguimiento \u00b7 __BOARD_TITLE__</title>\n<style>\n:root{--bg:#f7f7f8;--paper:#fff;--line:#e6e6e6;--ink:#111;--muted:#333;--purple:#5b5fc7;--red:#a4262c;--orange:#ca5010;--yellow:#986f00;--green:#107c10;--shadow:0 8px 26px rgba(0,0,0,.08)}\n*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:\"Segoe UI\",system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;font-size:14px;line-height:1.4}button,input,select{font:inherit}header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;gap:18px;align-items:center;justify-content:space-between}h1{margin:0;font-size:19px}.sub{font-size:12px;color:#333;margin-top:2px}.tabs{display:flex;gap:8px}.tab,.btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600}.tab.active{background:var(--purple);border-color:var(--purple);color:#fff}.wrap{padding:16px 22px}.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}.filters input,.filters select{height:36px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 12px;color:#111}.filters input{width:280px}.kpis{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;margin-bottom:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:0 1px 1px rgba(0,0,0,.02)}.kpi b{display:block;font-size:25px;margin-bottom:4px}.kpi.red b{color:var(--red)}.kpi.orange b{color:var(--orange)}.kpi.green b{color:var(--green)}.board{display:flex;gap:12px;align-items:flex-start;overflow:auto;padding-bottom:18px}.col{width:260px;min-width:260px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}.colh{font-weight:800;margin-bottom:8px;display:flex;gap:6px;align-items:center}.bu{font-size:10px;color:#fff;border-radius:4px;padding:1px 6px;font-weight:800;letter-spacing:.04em}.count{margin-left:auto;background:#f0f0f0;border-radius:999px;padding:1px 8px;font-size:12px}.card{border:1px solid var(--line);border-radius:8px;padding:9px;margin:7px 0;background:#fff;cursor:pointer}.card:hover{box-shadow:var(--shadow)}.card.done{opacity:.65}.title{font-weight:700;margin-bottom:4px}.meta{font-size:12px;color:#222;display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:700}.overdue{background:#fde7e9;color:#a4262c}.soon{background:#fff4ce;color:#986f00}.ok{background:#e6f4ea;color:#107c10}.nodate{background:#eee;color:#111}.blocked{background:#fce4d6;color:#9a3412}.tag{display:inline-block;font-size:10px;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin:0 4px 4px 0;background:#eee;font-weight:700}.gantt{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px}.ghead,.grow{display:grid;grid-template-columns:260px repeat(var(--days),64px);min-width:max-content}.ghead{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--line)}.ghead div,.gcell,.gname{border-right:1px solid var(--line);padding:8px}.gname{font-weight:700;border-bottom:1px solid var(--line);background:#fff}.gcell{min-height:42px;border-bottom:1px solid #f0f0f0}.bar{display:block;border-radius:999px;color:#fff;font-size:11px;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-weight:700;cursor:pointer}.bar.ok{background:#107c10}.bar.soon{background:#ca8a04}.bar.overdue{background:#a4262c}.bar.done{background:#666}.analysis-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}.panel h2{font-size:16px;margin:0 0 10px}.group{margin:12px 0}.group h3{font-size:14px;margin:0 0 6px;color:#5e1622}.line{margin:6px 0;padding-left:12px}.empty{color:#333;font-style:italic}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:12px;max-width:780px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow);padding:20px}.modal-card h2{margin:0 0 8px}.close{float:right;border:none;background:none;font-size:22px;cursor:pointer}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-box{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;white-space:pre-wrap}@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.analysis-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}}\n</style>\n</head>\n<body>\n<header><div><h1>Seguimiento \u00b7 __BOARD_TITLE__</h1><div class=\"sub\">Corte: __CUT_DATE__ \u00b7 archivo filtrable para equipo</div></div><div class=\"tabs\"><button class=\"tab active\" data-view=\"panel\">Panel</button><button class=\"tab\" data-view=\"gantt\">Gantt</button><button class=\"tab\" data-view=\"analysis\">An\u00e1lisis</button></div></header>\n<div class=\"wrap\">\n  <div class=\"filters\">\n    <input id=\"q\" placeholder=\"Buscar tarea, descripci\u00f3n, responsable...\">\n    <select id=\"fAssignee\"><option value=\"\">Responsable: todos</option></select>\n    <select id=\"fBU\"><option value=\"\">BU: todas</option></select>\n    <select id=\"fDep\"><option value=\"\">Dep\u00f3sito: todos</option></select>\n    <select id=\"fStatus\"><option value=\"\">Estado: todos</option><option value=\"todo\">Pendiente</option><option value=\"progress\">En curso</option><option value=\"blocked\">Bloqueado</option><option value=\"done\">Hecho</option><option value=\"__overdue__\">Vencidas</option><option value=\"__soon__\">Pr\u00f3ximas a vencer</option><option value=\"__blocking__\">Bloqueantes</option></select>\n    <button class=\"btn\" id=\"clear\">Limpiar</button>\n  </div>\n  <div id=\"app\"></div>\n</div>\n<div class=\"modal\" id=\"modal\"><div class=\"modal-card\"><button class=\"close\" id=\"modalClose\">\u00d7</button><div id=\"modalBody\"></div></div></div>\n<script>window.__TEAM_DATA__=__TEAM_DATA_JSON__;__CLOSE_SCRIPT__\n<script>\nconst DATA=window.__TEAM_DATA__;const board=DATA.board;let view='panel';\nconst $=s=>document.querySelector(s);const app=$('#app');\nconst statusMap={todo:'Pendiente',progress:'En curso',blocked:'Bloqueado',done:'Hecho'};\nfunction esc(s){return String(s||'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));}\nfunction today(){const d=new Date();d.setHours(0,0,0,0);return d}\nfunction diffDays(iso){if(!iso)return null;const d=new Date(iso+'T00:00:00');return Math.round((d-today())/86400000)}\nfunction fmt(iso){if(!iso)return '';const [y,m,d]=iso.split('-');return d+'/'+m}\nfunction colOf(t){return board.columns.find(c=>c.id===t.colId)||{name:'Sin dep\u00f3sito'}}\nfunction buOfCol(c){return (board.regions||[]).find(r=>r.name===(c&&c.region))||null}\nfunction buOfTask(t){return buOfCol(colOf(t))}\nfunction blockingTasks(t){return (t.deps||[]).map(id=>board.tasks.find(x=>x.id===id)).filter(Boolean)}\nfunction blockedByTask(t){return board.tasks.filter(x=>(x.deps||[]).includes(t.id))}\nfunction isOverdue(t){const d=diffDays(t.date);return t.status!=='done'&&d!==null&&d<0}function isSoon(t){const d=diffDays(t.date);return t.status!=='done'&&d!==null&&d>=0&&d<=7}function isBlocking(t){return t.status!=='done'&&blockedByTask(t).some(x=>x.status!=='done')}\nfunction dueClass(t){if(t.status==='done')return 'done';if(!t.date)return 'nodate';if(isOverdue(t))return 'overdue';if(isSoon(t))return 'soon';return 'ok'}\nfunction dueRelativeText(t){const d=diffDays(t.date);if(d===null)return 'sin fecha';if(t.status==='done')return 'hecha';if(d<0)return 'vencida hace '+Math.abs(d)+' d';if(d===0)return 'vence hoy';return 'vence en '+d+' d'}\nfunction dateTextShort(t){return dueRelativeText(t)}\nfunction dateTextFull(t){const d=diffDays(t.date);if(d===null)return 'Fecha vencimiento: sin fecha';const f=fmt(t.date);return 'Fecha vencimiento: '+f+' - '+dueRelativeText(t)}\nfunction matchesStatus(t,v){if(!v)return true;if(v==='__overdue__')return isOverdue(t);if(v==='__due_soon__'||v==='__soon__')return isSoon(t);if(v==='__blocking__')return isBlocking(t);return t.status===v}\nfunction filtered(){const q=$('#q').value.toLowerCase().trim(),a=$('#fAssignee').value,bu=$('#fBU').value,dep=$('#fDep').value,st=$('#fStatus').value;return board.tasks.filter(t=>{const c=colOf(t),r=buOfCol(c);const text=[t.title,t.desc,t.assignee,t.meetingNote,c.name,(r&&r.name),...(t.tags||[]).map(x=>x.label)].join(' ').toLowerCase();return(!q||text.includes(q))&&(!a||(t.assignee||'__none__')===a)&&(!bu||((r&&r.name)||'__none__')===bu)&&(!dep||t.colId===dep)&&matchesStatus(t,st)})}\nfunction sortTasks(arr){return [...arr].sort((a,b)=>{const da=diffDays(a.date),db=diffDays(b.date);const va=da===null?99999:da,vb=db===null?99999:db;if(va!==vb)return va-vb;return (a.title||'').localeCompare(b.title||'','es')})}\nfunction fillFilters(){const ass=[...new Set(board.tasks.map(t=>t.assignee||'').filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));if(board.tasks.some(t=>!t.assignee))ass.unshift('__none__');ass.forEach(x=>$('#fAssignee').insertAdjacentHTML('beforeend','<option value=\"'+esc(x)+'\">'+(x==='__none__'?'Sin responsable':esc(x))+'</option>'));(board.regions||[]).forEach(r=>$('#fBU').insertAdjacentHTML('beforeend','<option value=\"'+esc(r.name)+'\">'+esc(r.name)+'</option>'));board.columns.forEach(c=>$('#fDep').insertAdjacentHTML('beforeend','<option value=\"'+esc(c.id)+'\">'+esc(c.name)+'</option>'));}\nfunction kpis(tasks){const active=tasks.filter(t=>t.status!=='done'),done=tasks.filter(t=>t.status==='done');return '<div class=\"kpis\"><div class=\"kpi\"><b>'+active.length+'</b>activas</div><div class=\"kpi red\"><b>'+active.filter(isOverdue).length+'</b>vencidas</div><div class=\"kpi orange\"><b>'+active.filter(isSoon).length+'</b>vencen \u2264 7 d\u00edas</div><div class=\"kpi red\"><b>'+active.filter(t=>t.status==='blocked').length+'</b>bloqueadas</div><div class=\"kpi\"><b>'+active.filter(t=>!t.assignee).length+'</b>sin responsable</div><div class=\"kpi\"><b>'+active.filter(t=>!t.date).length+'</b>sin fecha</div><div class=\"kpi green\"><b>'+(board.tasks.length?Math.round(done.length/board.tasks.length*100):0)+'%</b>avance</div></div>'}\nfunction card(t){return '<div class=\"card '+(t.status==='done'?'done':'')+'\" onclick=\"openTask(\\''+t.id+'\\')\"><div>'+(t.tags||[]).map(g=>'<span class=\"tag\">'+esc(g.label)+'</span>').join('')+'</div><div class=\"title\">'+esc(t.title||'Sin t\u00edtulo')+'</div><div class=\"meta\"><span>'+esc(t.assignee||'Sin responsable')+'</span><span class=\"pill '+dueClass(t)+'\">'+esc(dateTextShort(t))+'</span>'+(t.status==='blocked'?'<span class=\"pill blocked\">Bloqueada</span>':'')+(isBlocking(t)?'<span class=\"pill blocked\">Bloqueante</span>':'')+'</div>'+(t.desc?'<div style=\"margin-top:5px\">'+esc(t.desc)+'</div>':'')+'</div>'}\nfunction renderPanel(){const tasks=filtered();let h=kpis(tasks)+'<div class=\"board\">';board.columns.forEach(c=>{const r=buOfCol(c);const ts=sortTasks(tasks.filter(t=>t.colId===c.id));if(!ts.length)return;h+='<section class=\"col\"><div class=\"colh\">'+esc(c.name)+' '+(r?'<span class=\"bu\" style=\"background:'+esc(r.color)+'\">'+esc(r.name)+'</span>':'')+'<span class=\"count\">'+ts.length+'</span></div>'+ts.map(card).join('')+'</section>'});h+='</div>';app.innerHTML=h;}\nfunction renderGantt(){const tasks=sortTasks(filtered().filter(t=>t.date));let min=today(),max=today();tasks.forEach(t=>{const d=new Date(t.date+'T00:00:00');if(d<min)min=d;if(d>max)max=d});min.setDate(min.getDate()-3);max.setDate(max.getDate()+7);const days=[];for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1))days.push(new Date(d));let h=kpis(filtered())+'<div class=\"gantt\"><div class=\"ghead\" style=\"--days:'+days.length+'\"><div>Tarea</div>'+days.map(d=>'<div>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'</div>').join('')+'</div>';tasks.forEach(t=>{const idx=days.findIndex(d=>d.toDateString()===new Date(t.date+'T00:00:00').toDateString());h+='<div class=\"grow\" style=\"--days:'+days.length+'\"><div class=\"gname\">'+esc(t.title||'Sin t\u00edtulo')+'<div class=\"meta\">'+esc(colOf(t).name)+' \u00b7 '+esc(t.assignee||'Sin responsable')+'</div></div>'+days.map((d,i)=>'<div class=\"gcell\">'+(i===idx?'<span class=\"bar '+dueClass(t)+'\" onclick=\"openTask(\\''+t.id+'\\')\">'+esc(t.assignee||'Tarea')+'</span>':'')+'</div>').join('')+'</div>'});h+='</div>';app.innerHTML=h;}\nfunction renderAnalysis(){\n  const tasks=filtered(), active=tasks.filter(t=>t.status!=='done');\n  let h=kpis(tasks)+'<div class=\"analysis-grid\"><div class=\"panel\"><h2>Foco para reuni\u00f3n</h2>';\n  const focus=sortTasks(active.filter(t=>isOverdue(t)||isSoon(t)||t.status==='blocked'||isBlocking(t)));\n  const byBU=new Map();\n  focus.forEach(t=>{\n    const r=buOfTask(t), bu=(r&&r.name)||'Sin BU', dep=colOf(t).name;\n    if(!byBU.has(bu)) byBU.set(bu,new Map());\n    if(!byBU.get(bu).has(dep)) byBU.get(bu).set(dep,[]);\n    byBU.get(bu).get(dep).push(t);\n  });\n  if(!focus.length) h+='<p class=\"empty\">Sin focos cr\u00edticos con los filtros actuales.</p>';\n  for(const [bu,deps] of byBU.entries()){\n    h+='<div class=\"group\"><h3>'+esc(bu)+'</h3>';\n    for(const [dep,ts] of deps.entries()){\n      h+='<b>'+esc(dep)+'</b>';\n      ts.forEach(t=>{\n        h+='<div class=\"line\">\u2022 <a href=\"#\" onclick=\"openTask(\\''+t.id+'\\');return false\">'+esc(t.title||'Sin t\u00edtulo')+'</a> \u2014 '+esc(t.assignee||'Sin responsable')+' \u2014 '+esc(dateTextShort(t));\n        if(isBlocking(t)) h+=' <small>(bloquea: '+esc(blockedByTask(t).map(x=>x.title).join(', '))+')</small>';\n        if(blockingTasks(t).length) h+=' <small>(depende de: '+esc(blockingTasks(t).map(x=>x.title).join(', '))+')</small>';\n        h+='</div>';\n      });\n    }\n    h+='</div>';\n  }\n  h+='</div><div class=\"panel\"><h2>Dependencias a destrabar</h2>';\n  const blockers=sortTasks(active.filter(isBlocking));\n  if(!blockers.length) h+='<p class=\"empty\">Sin tareas bloqueantes.</p>';\n  blockers.forEach(t=>{\n    h+='<div class=\"line\">\u2022 <a href=\"#\" onclick=\"openTask(\\''+t.id+'\\');return false\"><b>'+esc(t.title||'Sin t\u00edtulo')+'</b></a> \u2014 '+esc(t.assignee||'Sin responsable')+' \u2014 bloquea: '+esc(blockedByTask(t).map(x=>x.title).join(', '))+'</div>';\n  });\n  h+='</div></div>';\n  app.innerHTML=h;\n}\nfunction render(){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='panel')renderPanel();if(view==='gantt')renderGantt();if(view==='analysis')renderAnalysis()}\nfunction openTask(id){const t=board.tasks.find(x=>x.id===id);if(!t)return;const r=buOfTask(t);const subs=(t.subtasks||[]).filter(s=>(s.text||'').trim());const subsHtml=subs.length?'<div class=\"detail-box\"><b>Subtareas</b><ul style=\"margin:8px 0 0 18px;padding:0\">'+subs.map(s=>'<li style=\"margin:4px 0;'+(s.done?'text-decoration:line-through;color:#555':'')+'\">'+(s.done?'✅ ':'☐ ')+esc(s.text)+'</li>').join('')+'</ul></div>':'';$('#modalBody').innerHTML='<h2>'+esc(t.title||'Sin t\u00edtulo')+'</h2><div class=\"detail-grid\"><div><b>Dep\u00f3sito:</b> '+esc(colOf(t).name)+'<br><b>BU:</b> '+esc(r?r.name:'Sin BU')+'<br><b>Responsable:</b> '+esc(t.assignee||'Sin responsable')+'<br><b>Estado:</b> '+esc(statusMap[t.status]||t.status)+'<br><b>Vencimiento:</b> '+esc(dateTextFull(t))+'</div><div><b>Prioridad:</b> '+esc(t.priority||'media')+'<br><b>Depende de:</b> '+esc(blockingTasks(t).map(x=>x.title).join(', ')||'Ninguna')+'<br><b>Bloquea a:</b> '+esc(blockedByTask(t).map(x=>x.title).join(', ')||'Ninguna')+'</div></div>'+(t.desc?'<div class=\"detail-box\"><b>Descripci\u00f3n</b><br>'+esc(t.desc)+'</div>':'')+(t.meetingNote?'<div class=\"detail-box\"><b>Comentarios</b><br>'+esc(t.meetingNote)+'</div>':'')+subsHtml;$('#modal').classList.add('open')}\n$('#modalClose').onclick=()=>$('#modal').classList.remove('open');$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').classList.remove('open')});\ndocument.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});['q','fAssignee','fBU','fDep','fStatus'].forEach(id=>$('#'+id).addEventListener('input',render));$('#clear').onclick=()=>{['q','fAssignee','fBU','fDep','fStatus'].forEach(id=>$('#'+id).value='');render()};fillFilters();render();\n__CLOSE_SCRIPT__\n</body></html>";
+const TEAM_HTML_TEMPLATE = "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Seguimiento \u00b7 __BOARD_TITLE__</title>\n<style>\n:root{--bg:#f7f7f8;--paper:#fff;--line:#e6e6e6;--ink:#111;--muted:#333;--purple:#5b5fc7;--red:#a4262c;--orange:#ca5010;--yellow:#986f00;--green:#107c10;--shadow:0 8px 26px rgba(0,0,0,.08)}\n*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:\"Segoe UI\",system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;font-size:14px;line-height:1.4}button,input,select{font:inherit}header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;gap:18px;align-items:center;justify-content:space-between}h1{margin:0;font-size:19px}.sub{font-size:12px;color:#333;margin-top:2px}.tabs{display:flex;gap:8px}.tab,.btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600}.tab.active{background:var(--purple);border-color:var(--purple);color:#fff}.wrap{padding:16px 22px}.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}.filters input,.filters select{height:36px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 12px;color:#111}.filters input{width:280px}.kpis{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;margin-bottom:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:0 1px 1px rgba(0,0,0,.02)}.kpi b{display:block;font-size:25px;margin-bottom:4px}.kpi.red b{color:var(--red)}.kpi.orange b{color:var(--orange)}.kpi.green b{color:var(--green)}.board{display:flex;gap:12px;align-items:flex-start;overflow:auto;padding-bottom:18px}.col{width:260px;min-width:260px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}.colh{font-weight:800;margin-bottom:8px;display:flex;gap:6px;align-items:center}.bu{font-size:10px;color:#fff;border-radius:4px;padding:1px 6px;font-weight:800;letter-spacing:.04em}.count{margin-left:auto;background:#f0f0f0;border-radius:999px;padding:1px 8px;font-size:12px}.card{border:1px solid var(--line);border-radius:8px;padding:9px;margin:7px 0;background:#fff;cursor:pointer}.card:hover{box-shadow:var(--shadow)}.card.done{opacity:.65}.title{font-weight:700;margin-bottom:4px}.meta{font-size:12px;color:#222;display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:700}.overdue{background:#fde7e9;color:#a4262c}.soon{background:#fff4ce;color:#986f00}.ok{background:#e6f4ea;color:#107c10}.nodate{background:#eee;color:#111}.blocked{background:#fce4d6;color:#9a3412}.tag{display:inline-block;font-size:10px;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin:0 4px 4px 0;background:#eee;font-weight:700}.gantt{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px}.ghead,.grow{display:grid;grid-template-columns:260px repeat(var(--days),64px);min-width:max-content}.ghead{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--line)}.ghead div,.gcell,.gname{border-right:1px solid var(--line);padding:8px}.gname{font-weight:700;border-bottom:1px solid var(--line);background:#fff}.gcell{min-height:42px;border-bottom:1px solid #f0f0f0}.bar{display:block;border-radius:999px;color:#fff;font-size:11px;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-weight:700;cursor:pointer}.bar.ok{background:#107c10}.bar.soon{background:#ca8a04}.bar.overdue{background:#a4262c}.bar.done{background:#666}.analysis-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}.panel h2{font-size:16px;margin:0 0 10px}.group{margin:12px 0}.group h3{font-size:14px;margin:0 0 6px;color:#5e1622}.line{margin:6px 0;padding-left:12px}.empty{color:#333;font-style:italic}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:12px;max-width:780px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow);padding:20px}.modal-card h2{margin:0 0 8px}.close{float:right;border:none;background:none;font-size:22px;cursor:pointer}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-box{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;white-space:pre-wrap}@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.analysis-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}}\n</style>\n</head>\n<body>\n<header><div><h1>Seguimiento \u00b7 __BOARD_TITLE__</h1><div class=\"sub\">Corte: __CUT_DATE__ \u00b7 archivo filtrable para equipo</div></div><div class=\"tabs\"><button class=\"tab active\" data-view=\"panel\">Panel</button><button class=\"tab\" data-view=\"gantt\">Gantt</button><button class=\"tab\" data-view=\"analysis\">An\u00e1lisis</button></div></header>\n<div class=\"wrap\">\n  <div class=\"filters\">\n    <input id=\"q\" placeholder=\"Buscar tarea, descripci\u00f3n, responsable...\">\n    <select id=\"fAssignee\"><option value=\"\">Responsable: todos</option></select>\n    <select id=\"fBU\"><option value=\"\">BU: todas</option></select>\n    <select id=\"fDep\"><option value=\"\">Dep\u00f3sito: todos</option></select>\n    <select id=\"fStatus\"><option value=\"\">Estado: todos</option><option value=\"todo\">Pendiente</option><option value=\"progress\">En curso</option><option value=\"blocked\">Bloqueado</option><option value=\"done\">Hecho</option><option value=\"__overdue__\">Vencidas</option><option value=\"__soon__\">Pr\u00f3ximas a vencer</option><option value=\"__blocking__\">Bloqueantes</option></select>\n    <button class=\"btn\" id=\"clear\">Limpiar</button>\n  </div>\n  <div id=\"app\"></div>\n</div>\n<div class=\"modal\" id=\"modal\"><div class=\"modal-card\"><button class=\"close\" id=\"modalClose\">\u00d7</button><div id=\"modalBody\"></div></div></div>\n<script>window.__TEAM_DATA__=__TEAM_DATA_JSON__;__CLOSE_SCRIPT__\n<script>\nconst DATA=window.__TEAM_DATA__;const board=DATA.board;let view='panel';\nconst $=s=>document.querySelector(s);const app=$('#app');\nconst statusMap={todo:'Pendiente',progress:'En curso',blocked:'Bloqueado',done:'Hecho'};\nfunction esc(s){return String(s||'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));}\nfunction today(){const d=new Date();d.setHours(0,0,0,0);return d}\nfunction diffDays(iso){if(!iso)return null;const d=new Date(iso+'T00:00:00');return Math.round((d-today())/86400000)}\nfunction fmt(iso){if(!iso)return '';const [y,m,d]=iso.split('-');return d+'/'+m}\nfunction colOf(t){return board.columns.find(c=>c.id===t.colId)||{name:'Sin dep\u00f3sito'}}\nfunction buOfCol(c){return (board.regions||[]).find(r=>r.name===(c&&c.region))||null}\nfunction buOfTask(t){return buOfCol(colOf(t))}\nfunction blockingTasks(t){return (t.deps||[]).map(id=>board.tasks.find(x=>x.id===id)).filter(Boolean)}\nfunction blockedByTask(t){return board.tasks.filter(x=>(x.deps||[]).includes(t.id))}\nfunction isOverdue(t){const d=diffDays(t.date);return t.status!=='done'&&d!==null&&d<0}function isSoon(t){const d=diffDays(t.date);return t.status!=='done'&&d!==null&&d>=0&&d<=7}function isBlocking(t){return t.status!=='done'&&blockedByTask(t).some(x=>x.status!=='done')}\nfunction dueClass(t){if(t.status==='done')return 'done';if(!t.date)return 'nodate';if(isOverdue(t))return 'overdue';if(isSoon(t))return 'soon';return 'ok'}\nfunction dueRelativeText(t){const d=diffDays(t.date);if(d===null)return 'sin fecha';if(t.status==='done')return 'hecha';if(d<0)return 'vencida hace '+Math.abs(d)+' d';if(d===0)return 'vence hoy';return 'vence en '+d+' d'}\nfunction dateTextShort(t){return dueRelativeText(t)}\nfunction dateTextFull(t){const d=diffDays(t.date);if(d===null)return 'Fecha vencimiento: sin fecha';const f=fmt(t.date);return 'Fecha vencimiento: '+f+' - '+dueRelativeText(t)}\nfunction matchesStatus(t,v){if(!v)return true;if(v==='__overdue__')return isOverdue(t);if(v==='__due_soon__'||v==='__soon__')return isSoon(t);if(v==='__blocking__')return isBlocking(t);return t.status===v}\nfunction filtered(){const q=$('#q').value.toLowerCase().trim(),a=$('#fAssignee').value,bu=$('#fBU').value,dep=$('#fDep').value,st=$('#fStatus').value;return board.tasks.filter(t=>{const c=colOf(t),r=buOfCol(c);const text=[t.title,t.desc,assigneeLabel(t),t.meetingNote,c.name,(r&&r.name),...(t.tags||[]).map(x=>x.label)].join(' ').toLowerCase();return(!q||text.includes(q))&&(!a||assigneeValues(t).includes(a))&&(!bu||((r&&r.name)||'__none__')===bu)&&(!dep||t.colId===dep)&&matchesStatus(t,st)})}\nfunction sortTasks(arr){return [...arr].sort((a,b)=>{const da=diffDays(a.date),db=diffDays(b.date);const va=da===null?99999:da,vb=db===null?99999:db;if(va!==vb)return va-vb;return (a.title||'').localeCompare(b.title||'','es')})}\nfunction fillFilters(){const ass=[...new Set(board.tasks.flatMap(assigneeValues))].sort((a,b)=>a.localeCompare(b,'es'));if(board.tasks.some(t=>assignees(t).length===0))ass.unshift('__none__');ass.forEach(x=>$('#fAssignee').insertAdjacentHTML('beforeend','<option value=\"'+esc(x)+'\">'+(x==='__none__'?'Sin responsable':esc(x))+'</option>'));(board.regions||[]).forEach(r=>$('#fBU').insertAdjacentHTML('beforeend','<option value=\"'+esc(r.name)+'\">'+esc(r.name)+'</option>'));board.columns.forEach(c=>$('#fDep').insertAdjacentHTML('beforeend','<option value=\"'+esc(c.id)+'\">'+esc(c.name)+'</option>'));}\nfunction kpis(tasks){const active=tasks.filter(t=>t.status!=='done'),done=tasks.filter(t=>t.status==='done');return '<div class=\"kpis\"><div class=\"kpi\"><b>'+active.length+'</b>activas</div><div class=\"kpi red\"><b>'+active.filter(isOverdue).length+'</b>vencidas</div><div class=\"kpi orange\"><b>'+active.filter(isSoon).length+'</b>vencen \u2264 7 d\u00edas</div><div class=\"kpi red\"><b>'+active.filter(t=>t.status==='blocked').length+'</b>bloqueadas</div><div class=\"kpi\"><b>'+active.filter(t=>assignees(t).length===0).length+'</b>sin responsable</div><div class=\"kpi\"><b>'+active.filter(t=>!t.date).length+'</b>sin fecha</div><div class=\"kpi green\"><b>'+(board.tasks.length?Math.round(done.length/board.tasks.length*100):0)+'%</b>avance</div></div>'}\nfunction card(t){return '<div class=\"card '+(t.status==='done'?'done':'')+'\" onclick=\"openTask(\\''+t.id+'\\')\"><div>'+(t.tags||[]).map(g=>'<span class=\"tag\">'+esc(g.label)+'</span>').join('')+'</div><div class=\"title\">'+esc(t.title||'Sin t\u00edtulo')+'</div><div class=\"meta\"><span>'+esc(assigneeLabel(t))+'</span><span class=\"pill '+dueClass(t)+'\">'+esc(dateTextShort(t))+'</span>'+(t.status==='blocked'?'<span class=\"pill blocked\">Bloqueada</span>':'')+(isBlocking(t)?'<span class=\"pill blocked\">Bloqueante</span>':'')+'</div>'+(t.desc?'<div style=\"margin-top:5px\">'+esc(t.desc)+'</div>':'')+'</div>'}\nfunction renderPanel(){const tasks=filtered();let h=kpis(tasks)+'<div class=\"board\">';board.columns.forEach(c=>{const r=buOfCol(c);const ts=sortTasks(tasks.filter(t=>t.colId===c.id));if(!ts.length)return;h+='<section class=\"col\"><div class=\"colh\">'+esc(c.name)+' '+(r?'<span class=\"bu\" style=\"background:'+esc(r.color)+'\">'+esc(r.name)+'</span>':'')+'<span class=\"count\">'+ts.length+'</span></div>'+ts.map(card).join('')+'</section>'});h+='</div>';app.innerHTML=h;}\nfunction renderGantt(){const tasks=sortTasks(filtered().filter(t=>t.date));let min=today(),max=today();tasks.forEach(t=>{const d=new Date(t.date+'T00:00:00');if(d<min)min=d;if(d>max)max=d});min.setDate(min.getDate()-3);max.setDate(max.getDate()+7);const days=[];for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1))days.push(new Date(d));let h=kpis(filtered())+'<div class=\"gantt\"><div class=\"ghead\" style=\"--days:'+days.length+'\"><div>Tarea</div>'+days.map(d=>'<div>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'</div>').join('')+'</div>';tasks.forEach(t=>{const idx=days.findIndex(d=>d.toDateString()===new Date(t.date+'T00:00:00').toDateString());h+='<div class=\"grow\" style=\"--days:'+days.length+'\"><div class=\"gname\">'+esc(t.title||'Sin t\u00edtulo')+'<div class=\"meta\">'+esc(colOf(t).name)+' \u00b7 '+esc(assigneeLabel(t))+'</div></div>'+days.map((d,i)=>'<div class=\"gcell\">'+(i===idx?'<span class=\"bar '+dueClass(t)+'\" onclick=\"openTask(\\''+t.id+'\\')\">'+esc(assigneeLabel(t))+'</span>':'')+'</div>').join('')+'</div>'});h+='</div>';app.innerHTML=h;}\nfunction renderAnalysis(){\n  const tasks=filtered(), active=tasks.filter(t=>t.status!=='done');\n  let h=kpis(tasks)+'<div class=\"analysis-grid\"><div class=\"panel\"><h2>Foco para reuni\u00f3n</h2>';\n  const focus=sortTasks(active.filter(t=>isOverdue(t)||isSoon(t)||t.status==='blocked'||isBlocking(t)));\n  const byBU=new Map();\n  focus.forEach(t=>{\n    const r=buOfTask(t), bu=(r&&r.name)||'Sin BU', dep=colOf(t).name;\n    if(!byBU.has(bu)) byBU.set(bu,new Map());\n    if(!byBU.get(bu).has(dep)) byBU.get(bu).set(dep,[]);\n    byBU.get(bu).get(dep).push(t);\n  });\n  if(!focus.length) h+='<p class=\"empty\">Sin focos cr\u00edticos con los filtros actuales.</p>';\n  for(const [bu,deps] of byBU.entries()){\n    h+='<div class=\"group\"><h3>'+esc(bu)+'</h3>';\n    for(const [dep,ts] of deps.entries()){\n      h+='<b>'+esc(dep)+'</b>';\n      ts.forEach(t=>{\n        h+='<div class=\"line\">\u2022 <a href=\"#\" onclick=\"openTask(\\''+t.id+'\\');return false\">'+esc(t.title||'Sin t\u00edtulo')+'</a> \u2014 '+esc(assigneeLabel(t))+' \u2014 '+esc(dateTextShort(t));\n        if(isBlocking(t)) h+=' <small>(bloquea: '+esc(blockedByTask(t).map(x=>x.title).join(', '))+')</small>';\n        if(blockingTasks(t).length) h+=' <small>(depende de: '+esc(blockingTasks(t).map(x=>x.title).join(', '))+')</small>';\n        h+='</div>';\n      });\n    }\n    h+='</div>';\n  }\n  h+='</div><div class=\"panel\"><h2>Dependencias a destrabar</h2>';\n  const blockers=sortTasks(active.filter(isBlocking));\n  if(!blockers.length) h+='<p class=\"empty\">Sin tareas bloqueantes.</p>';\n  blockers.forEach(t=>{\n    h+='<div class=\"line\">\u2022 <a href=\"#\" onclick=\"openTask(\\''+t.id+'\\');return false\"><b>'+esc(t.title||'Sin t\u00edtulo')+'</b></a> \u2014 '+esc(assigneeLabel(t))+' \u2014 bloquea: '+esc(blockedByTask(t).map(x=>x.title).join(', '))+'</div>';\n  });\n  h+='</div></div>';\n  app.innerHTML=h;\n}\nfunction render(){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='panel')renderPanel();if(view==='gantt')renderGantt();if(view==='analysis')renderAnalysis()}\nfunction openTask(id){const t=board.tasks.find(x=>x.id===id);if(!t)return;const r=buOfTask(t);const subs=(t.subtasks||[]).filter(s=>(s.text||'').trim());const subsHtml=subs.length?'<div class=\"detail-box\"><b>Subtareas</b><ul style=\"margin:8px 0 0 18px;padding:0\">'+subs.map(s=>'<li style=\"margin:4px 0;'+(s.done?'text-decoration:line-through;color:#555':'')+'\">'+(s.done?'✅ ':'☐ ')+esc(s.text)+'</li>').join('')+'</ul></div>':'';$('#modalBody').innerHTML='<h2>'+esc(t.title||'Sin t\u00edtulo')+'</h2><div class=\"detail-grid\"><div><b>Dep\u00f3sito:</b> '+esc(colOf(t).name)+'<br><b>BU:</b> '+esc(r?r.name:'Sin BU')+'<br><b>Responsable:</b> '+esc(assigneeLabel(t))+'<br><b>Estado:</b> '+esc(statusMap[t.status]||t.status)+'<br><b>Vencimiento:</b> '+esc(dateTextFull(t))+'</div><div><b>Prioridad:</b> '+esc(t.priority||'media')+'<br><b>Depende de:</b> '+esc(blockingTasks(t).map(x=>x.title).join(', ')||'Ninguna')+'<br><b>Bloquea a:</b> '+esc(blockedByTask(t).map(x=>x.title).join(', ')||'Ninguna')+'</div></div>'+(t.desc?'<div class=\"detail-box\"><b>Descripci\u00f3n</b><br>'+esc(t.desc)+'</div>':'')+(t.meetingNote?'<div class=\"detail-box\"><b>Comentarios</b><br>'+esc(t.meetingNote)+'</div>':'')+subsHtml;$('#modal').classList.add('open')}\n$('#modalClose').onclick=()=>$('#modal').classList.remove('open');$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').classList.remove('open')});\ndocument.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});['q','fAssignee','fBU','fDep','fStatus'].forEach(id=>$('#'+id).addEventListener('input',render));$('#clear').onclick=()=>{['q','fAssignee','fBU','fDep','fStatus'].forEach(id=>$('#'+id).value='');render()};fillFilters();render();\n__CLOSE_SCRIPT__\n</body></html>";
 function exportTeamHTML() {
+  if (editingTaskId) commitTaskModalFields(false);
   const sourceBoard = currentBoard();
   const board = JSON.parse(JSON.stringify(sourceBoard || {}));
   board.columns = Array.isArray(board.columns) ? board.columns : [];
   board.tasks = Array.isArray(board.tasks) ? board.tasks.filter(t => t.status !== 'done') : [];
+  board.tasks.forEach(t => {
+    const names = Array.isArray(t.assignees) && t.assignees.length ? t.assignees : (t.assignee ? String(t.assignee).split(',') : []);
+    t.assignees = [...new Set(names.map(x => String(x || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    t.assignee = t.assignees.join(', ');
+  });
   board.members = Array.isArray(board.members) ? board.members : [];
   board.regions = Array.isArray(board.regions) ? board.regions : [];
 
@@ -5813,8 +6069,7 @@ function exportTeamHTML() {
 <title>Seguimiento · ${boardTitle}</title>
 <style>
 :root{--bg:#f7f4ef;--paper:#fff;--line:#e5ded2;--ink:#201a16;--muted:#665b51;--wine:#7a2533;--red:#a4262c;--orange:#ca5010;--gold:#986f00;--green:#107c10;--shadow:0 12px 30px rgba(37,31,27,.11)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;font-size:14px;line-height:1.42}button,input,select{font:inherit}a{color:var(--wine);font-weight:750;text-decoration:none}a:hover{text-decoration:underline}header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;gap:18px;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(0,0,0,.03)}h1{margin:0;font-size:19px}.sub{font-size:12px;color:var(--muted);margin-top:2px}.tabs{display:flex;gap:8px}.tab,.btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:750}.tab.active{background:var(--wine);border-color:var(--wine);color:#fff}.wrap{padding:16px 22px}.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}.filters input,.filters select{height:36px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 12px;color:#111}.filters input{width:300px}.kpis{display:grid;grid-template-columns:repeat(7,minmax(118px,1fr));gap:10px;margin-bottom:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 1px 1px rgba(0,0,0,.02)}.kpi b{display:block;font-size:25px;margin-bottom:4px}.kpi.red b{color:var(--red)}.kpi.orange b{color:var(--orange)}.kpi.green b{color:var(--green)}.board{display:flex;gap:12px;align-items:flex-start;overflow:auto;padding-bottom:18px}.col{width:270px;min-width:270px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}.colh{font-weight:850;margin-bottom:8px;display:flex;gap:6px;align-items:center}.bu{font-size:10px;color:#fff;border-radius:999px;padding:1px 7px;font-weight:850;letter-spacing:.04em}.count{margin-left:auto;background:#f0ece5;border-radius:999px;padding:1px 8px;font-size:12px}.card{border:1px solid var(--line);border-radius:9px;padding:9px;margin:7px 0;background:#fff;cursor:pointer}.card:hover{box-shadow:var(--shadow)}.title{font-weight:750;margin-bottom:4px}.meta{font-size:12px;color:#222;display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:800}.overdue{background:#fde7e9;color:#a4262c}.soon{background:#fff4ce;color:#986f00}.ok{background:#e6f4ea;color:#107c10}.nodate{background:#eee;color:#111}.blocked{background:#fce4d6;color:#9a3412}.tag{display:inline-block;font-size:10px;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin:0 4px 4px 0;background:#eee;font-weight:800}.gantt{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px}.ghead,.grow{display:grid;grid-template-columns:280px repeat(var(--days),64px);min-width:max-content}.ghead{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--line)}.ghead div,.gcell,.gname{border-right:1px solid var(--line);padding:8px}.gname{font-weight:750;border-bottom:1px solid var(--line);background:#fff}.gcell{min-height:42px;border-bottom:1px solid #f2eee8}.bar{display:block;border-radius:999px;color:#fff;font-size:11px;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-weight:800;cursor:pointer}.bar.ok{background:#107c10}.bar.soon{background:#ca8a04}.bar.overdue{background:#a4262c}.bar.nodate{background:#777}.bar.done{background:#666}.analysis-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.panel h2{font-size:16px;margin:0 0 10px}.group{margin:12px 0}.group h3{font-size:14px;margin:0 0 6px;color:var(--wine)}.line{margin:6px 0;padding-left:12px}.empty{color:#333;font-style:italic}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:12px;max-width:820px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow);padding:20px}.modal-card h2{margin:0 0 8px}.close{float:right;border:none;background:none;font-size:22px;cursor:pointer}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-box{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;white-space:pre-wrap}@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.analysis-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}.filters input{width:100%}}
-</style>
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;font-size:14px;line-height:1.42}button,input,select{font:inherit}a{color:var(--wine);font-weight:750;text-decoration:none}a:hover{text-decoration:underline}header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;gap:18px;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(0,0,0,.03)}h1{margin:0;font-size:19px}.sub{font-size:12px;color:var(--muted);margin-top:2px}.tabs{display:flex;gap:8px}.tab,.btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:750}.tab.active{background:var(--wine);border-color:var(--wine);color:#fff}.wrap{padding:16px 22px}.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}.filters input,.filters select{height:36px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 12px;color:#111}.filters input{width:300px}.kpis{display:grid;grid-template-columns:repeat(7,minmax(118px,1fr));gap:10px;margin-bottom:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 1px 1px rgba(0,0,0,.02)}.kpi b{display:block;font-size:25px;margin-bottom:4px}.kpi.red b{color:var(--red)}.kpi.orange b{color:var(--orange)}.kpi.green b{color:var(--green)}.board{display:flex;gap:12px;align-items:flex-start;overflow:auto;padding-bottom:18px}.col{width:270px;min-width:270px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}.colh{font-weight:850;margin-bottom:8px;display:flex;gap:6px;align-items:center}.bu{font-size:10px;color:#fff;border-radius:999px;padding:1px 7px;font-weight:850;letter-spacing:.04em}.count{margin-left:auto;background:#f0ece5;border-radius:999px;padding:1px 8px;font-size:12px}.card{border:1px solid var(--line);border-radius:9px;padding:9px;margin:7px 0;background:#fff;cursor:pointer}.card:hover{box-shadow:var(--shadow)}.title{font-weight:750;margin-bottom:4px}.meta{font-size:12px;color:#222;display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:800}.overdue{background:#fde7e9;color:#a4262c}.soon{background:#fff4ce;color:#986f00}.ok{background:#e6f4ea;color:#107c10}.nodate{background:#eee;color:#111}.blocked{background:#fce4d6;color:#9a3412}.tag{display:inline-block;font-size:10px;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin:0 4px 4px 0;background:#eee;font-weight:800}.gantt{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px}.ghead,.grow{display:grid;grid-template-columns:280px repeat(var(--days),64px);min-width:max-content}.ghead{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--line)}.ghead div,.gcell,.gname{border-right:1px solid var(--line);padding:8px}.gname{font-weight:750;border-bottom:1px solid var(--line);background:#fff}.gcell{min-height:42px;border-bottom:1px solid #f2eee8}.bar{display:block;border-radius:999px;color:#fff;font-size:11px;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-weight:800;cursor:pointer}.bar.ok{background:#107c10}.bar.soon{background:#ca8a04}.bar.overdue{background:#a4262c}.bar.nodate{background:#777}.bar.done{background:#666}.analysis-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.panel h2{font-size:16px;margin:0 0 10px}.group{margin:12px 0}.group h3{font-size:14px;margin:0 0 6px;color:var(--wine)}.line{margin:6px 0;padding-left:12px}.empty{color:#333;font-style:italic}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:12px;max-width:820px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow);padding:20px}.modal-card h2{margin:0 0 8px}.close{float:right;border:none;background:none;font-size:22px;cursor:pointer}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-box{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;white-space:pre-wrap}@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.analysis-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}.filters input{width:100%}}\n</style>
 </head>
 <body>
 <header><div><h1>Seguimiento · ${boardTitle}</h1><div class="sub">Corte: ${cutDate} · archivo filtrable para equipo</div></div><div class="tabs"><button class="tab active" data-view="panel">Panel</button><button class="tab" data-view="gantt">Gantt</button><button class="tab" data-view="analysis">Análisis</button></div></header>
@@ -5899,6 +6154,7 @@ const exportTeamBtn = document.getElementById('m-export-team-html');
 if (exportTeamBtn) exportTeamBtn.onclick = exportTeamHTML;
 
 document.getElementById('m-copy').onclick = async () => {
+  if (editingTaskId) commitTaskModalFields(false);
   const text = buildMinuteText();
   try {
     await navigator.clipboard.writeText(text);
@@ -5910,6 +6166,7 @@ document.getElementById('m-copy').onclick = async () => {
 };
 
 document.getElementById('m-copy-html').onclick = async () => {
+  if (editingTaskId) commitTaskModalFields(false);
   const html = buildMinuteHTML();
   const text = buildMinuteText();
   try {
@@ -5944,6 +6201,7 @@ document.getElementById('m-copy-html').onclick = async () => {
 };
 
 document.getElementById('m-send').onclick = () => {
+  if (editingTaskId) commitTaskModalFields(false);
   const subject = document.getElementById('m-subject').value.trim();
   const body = buildMinuteText();
   const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -6061,7 +6319,7 @@ function ganttTaskTitle(t) {
     t.title || 'Sin título',
     `Estado: ${STATUSES[t.status].label}`,
     `Prioridad: ${(PRIORITIES[t.priority || 'medium'] || PRIORITIES.medium).label}`,
-    t.assignee ? `Responsable: ${t.assignee}` : 'Sin responsable',
+    getTaskAssignees(t).length ? `Responsable: ${taskAssigneeLabel(t)}` : 'Sin responsable',
     t.date ? `Vence: ${formatDate(t.date, true)}` : '',
     deps.length ? `Depende de: ${deps.map(x => x.title || 'Sin título').join(', ')}` : 'No depende de otras tareas',
     dependents.length ? `Bloquea a: ${dependents.map(x => x.title || 'Sin título').join(', ')}` : 'No bloquea otras tareas',
@@ -6084,7 +6342,7 @@ function showGanttPopover(t, e) {
     <div class="gantt-popover-meta">
       <div><b>Depósito:</b> ${escapeHtml(col ? col.name : 'Sin depósito')}</div>
       <div><b>Vence:</b> ${escapeHtml(formatDate(t.date, true))}</div>
-      <div><b>Responsable:</b> ${escapeHtml(t.assignee || 'Sin asignar')}</div>
+      <div><b>Responsable:</b> ${escapeHtml(taskAssigneeLabel(t, 'Sin asignar'))}</div>
       <div><b>Estado:</b> ${STATUSES[t.status].label} · <b>Prioridad:</b> ${escapeHtml(p.label)}</div>
     </div>
     <div class="gantt-popover-block">
@@ -6195,23 +6453,23 @@ function renderGanttView() {
   const board = currentBoard();
   const host = document.getElementById('gantt-board');
   host.innerHTML = '';
-  const dated = board.tasks.filter(t => t.date && cardMatchesFilters(t));
   const today = startOfToday();
-  let min = new Date(today), max = new Date(today);
-  dated.forEach(t => {
+  const min = new Date(today.getFullYear(), today.getMonth(), 1);
+  const max = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  min.setDate(min.getDate() - 2);
+  max.setDate(max.getDate() + 2);
+  const dated = board.tasks.filter(t => {
+    if (!t.date || !cardMatchesFilters(t)) return false;
     const d = new Date(t.date + 'T00:00:00');
-    if (d < min) min = d;
-    if (d > max) max = d;
+    return d >= min && d <= max;
   });
-  min.setDate(min.getDate() - 3);
-  max.setDate(max.getDate() + 7);
   const days = [];
   for (let d = new Date(min); d <= max; d.setDate(d.getDate()+1)) days.push(new Date(d));
   const todayIdx = days.findIndex(d => d.toDateString() === today.toDateString());
 
   const head = document.createElement('div');
   head.className = 'gantt-top';
-  head.innerHTML = `<div><b>Gantt por depósito</b><span>${dated.length} tareas con fecha visible · pasá el cursor por una tarea para ver detalles</span></div><div class="today-label">Hoy: ${formatDate(todayISO(), true)}</div>`;
+  head.innerHTML = `<div><b>Gantt por depósito</b><span>Foco en el mes actual · ${dated.length} tareas con fecha visible · pasá el cursor por una tarea para ver detalles</span></div><div class="today-label">Hoy: ${formatDate(todayISO(), true)}</div>`;
   host.appendChild(head);
 
   const table = document.createElement('div');
@@ -6258,8 +6516,9 @@ function renderGanttView() {
       const idx = days.findIndex(d => d.toDateString() === taskDate.toDateString());
       const { deps, dependents } = ganttDependencyInfo(t);
       const depMark = deps.some(x => x.status !== 'done') ? ' ⛓' : dependents.length ? ' 🔗' : '';
-      row.innerHTML = `<button class="gantt-name"><span class="priority-dot priority-${t.priority || 'medium'}"></span>${escapeHtml(t.title || 'Sin título')}<small>${escapeHtml(p.label)} · ${STATUSES[t.status].label}${depMark}</small></button>` +
-        days.map((d, i) => `<div class="gantt-cell ${i===todayIdx?'today':''}">${i===idx ? `<span class="gantt-pill ${t.status === 'done' ? 'done ' : ''}${dueStatusClass(t)}" data-task-id="${t.id}">${escapeHtml(t.assignee || 'Sin responsable')}${depMark}</span>` : ''}</div>`).join('');
+      const pillLabel = shortAssigneeLabel(t);
+      row.innerHTML = `<button class="gantt-name"><span class="priority-dot priority-${t.priority || 'medium'}"></span>${escapeHtml(t.title || 'Sin título')}<span class="gantt-assignee-mini">${escapeHtml(taskAssigneeLabel(t, 'Sin responsable'))}</span><small>${escapeHtml(p.label)} · ${STATUSES[t.status].label}${depMark}</small></button>` +
+        days.map((d, i) => `<div class="gantt-cell ${i===todayIdx?'today':''}">${i===idx ? `<span class="gantt-pill ${t.status === 'done' ? 'done ' : ''}${dueStatusClass(t)}" data-task-id="${t.id}" title="${escapeAttr((t.title || 'Sin título') + ' · ' + taskAssigneeLabel(t, 'Sin responsable'))}">${escapeHtml(pillLabel)}${depMark}</span>` : ''}</div>`).join('');
       row.querySelector('.gantt-name').onclick = () => openTaskModal(t.id);
       const pill = row.querySelector('.gantt-pill');
       if (pill) {
@@ -6284,7 +6543,13 @@ function renderGanttView() {
       host.appendChild(row);
     });
   });
-  requestAnimationFrame(() => renderGanttDependencies(host));
+  requestAnimationFrame(() => {
+    renderGanttDependencies(host);
+    const scroller = document.getElementById('gantt-main');
+    if (scroller) {
+      scroller.scrollLeft = 0;
+    }
+  });
 }
 
 
@@ -6340,7 +6605,7 @@ function renderAnalysisView() {
   const overdue = active.filter(t => t.date && daysDiffFromToday(t.date) < 0);
   const dueSoon = active.filter(t => t.date && daysDiffFromToday(t.date) >= 0 && daysDiffFromToday(t.date) <= 3);
   const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
-  const noOwner = active.filter(t => !t.assignee);
+  const noOwner = active.filter(t => getTaskAssignees(t).length === 0);
   const noDate = active.filter(t => !t.date);
   const hasDeps = active.filter(t => (t.deps || []).length || taskBlocksNames(t, board).length);
   const blockers = active.filter(t => taskBlocksNames(t, board).some(d => d.status !== 'done'));
@@ -6360,15 +6625,18 @@ function renderAnalysisView() {
 
   const people = new Map();
   tasks.forEach(t => {
-    const name = t.assignee || 'Sin asignar';
-    if (!people.has(name)) people.set(name, {name,total:0,active:0,done:0,overdue:0,dueSoon:0,blocked:0,noDate:0});
-    const p = people.get(name);
-    p.total++;
-    if (t.status === 'done') p.done++; else p.active++;
-    if (t.status !== 'done' && t.date && daysDiffFromToday(t.date) < 0) p.overdue++;
-    if (t.status !== 'done' && t.date && daysDiffFromToday(t.date) >= 0 && daysDiffFromToday(t.date) <= 3) p.dueSoon++;
-    if (t.status !== 'done' && (t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'))) p.blocked++;
-    if (t.status !== 'done' && !t.date) p.noDate++;
+    const names = getTaskAssignees(t);
+    const peopleForTask = names.length ? names : ['Sin asignar'];
+    peopleForTask.forEach(name => {
+      if (!people.has(name)) people.set(name, {name,total:0,active:0,done:0,overdue:0,dueSoon:0,blocked:0,noDate:0});
+      const p = people.get(name);
+      p.total++;
+      if (t.status === 'done') p.done++; else p.active++;
+      if (t.status !== 'done' && t.date && daysDiffFromToday(t.date) < 0) p.overdue++;
+      if (t.status !== 'done' && t.date && daysDiffFromToday(t.date) >= 0 && daysDiffFromToday(t.date) <= 3) p.dueSoon++;
+      if (t.status !== 'done' && (t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'))) p.blocked++;
+      if (t.status !== 'done' && !t.date) p.noDate++;
+    });
   });
   const peopleRows = [...people.values()].sort((a,b) => b.active - a.active || b.overdue - a.overdue || a.name.localeCompare(b.name,'es'));
 
@@ -6383,7 +6651,7 @@ function renderAnalysisView() {
     if (!list.length) return `<div class="pm-empty">${escapeHtml(emptyText)}</div>`;
     return `<div class="pm-mini-list">${list.map(t => `<button type="button" class="pm-mini-task" data-task-id="${t.id}">
       <strong>${escapeHtml(t.title || 'Sin título')}</strong>
-      <small>${escapeHtml(colName(t))} · ${escapeHtml(t.assignee || 'Sin responsable')} · ${escapeHtml(analysisTaskDateMeta(t))}</small>
+      <small>${escapeHtml(colName(t))} · ${escapeHtml(taskAssigneeLabel(t))} · ${escapeHtml(analysisTaskDateMeta(t))}</small>
     </button>`).join('')}</div>`;
   };
   const kpiCatalog = {
@@ -6511,7 +6779,7 @@ function buildPMSummaryText(board, data) {
       bu.depositos.forEach(dep => {
         lines.push(`  ▸ ${dep.name}`);
         dep.tasks.forEach(t => {
-          const meta = [t.assignee || 'Sin responsable', analysisTaskDateMeta(t)];
+          const meta = [taskAssigneeLabel(t), analysisTaskDateMeta(t)];
           const depInfo = dependencyInfoText(t, board);
           lines.push(`    • ${t.title || 'Sin título'} — ${meta.join(' · ')}${depInfo ? ` (${depInfo})` : ''}`);
         });
@@ -6602,6 +6870,9 @@ document.getElementById('tag-admin-add-btn').onclick = addAdminTag;
 document.getElementById('tag-admin-add-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addAdminTag(); } });
 
 function enableDragPan(el) {
+  if (!el) return;
+  el.classList.add('board-drag-pan-ready');
+
   let isDown = false;
   let isPanning = false;
   let suppressNextClick = false;
@@ -6609,84 +6880,75 @@ function enableDragPan(el) {
   let startY = 0;
   let scrollLeft = 0;
   let scrollTop = 0;
-  let disabledDragEls = [];
+
+  function activeScroller() {
+    const view = state.view || 'board';
+    return view === 'gantt' ? document.getElementById('gantt-main') : document.getElementById('board-main');
+  }
+
+  function isInsideActiveScroller(target) {
+    const scroller = activeScroller();
+    return scroller && scroller.contains(target);
+  }
 
   function shouldIgnorePanStart(target) {
-    // Importante: las tarjetas quedan fuera del paneo para que conserve el drag nativo
-    // y se puedan mover entre depósitos dentro del mismo gestor.
-    return !!target.closest('button, input, textarea, select, option, a, .modal, .filter-chip, .board-picker, .col-grip, .card, .card-check, .card-select, .tag-chip, .tag-suggestions, .ctx-menu, .gantt-pill, .gantt-name');
+    return !!target.closest('input, textarea, select, option, a, .modal, .filter-chip, .board-picker, .col-grip, .card-drag-handle, .card-check, .card-select, .tag-chip, .tag-suggestions, .ctx-menu, .gantt-pill, .gantt-name, .completed-toggle, .add-card, .add-col, .col-menu, .assignee-picker, .assignee-manage');
   }
 
-  function disableNativeDragging() {
-    disabledDragEls = Array.from(el.querySelectorAll('.card, .column'));
-    disabledDragEls.forEach(node => {
-      node.dataset.wasDraggable = node.draggable ? '1' : '0';
-      node.draggable = false;
-    });
-  }
-
-  function restoreNativeDragging() {
-    disabledDragEls.forEach(node => {
-      node.draggable = node.dataset.wasDraggable === '1';
-      delete node.dataset.wasDraggable;
-    });
-    disabledDragEls = [];
-  }
-
-  function onMouseDown(e) {
+  function onPointerDown(e) {
     if (e.button !== 0) return;
+    if (!isInsideActiveScroller(e.target)) return;
     if (shouldIgnorePanStart(e.target)) return;
+
+    const scroller = activeScroller();
+    if (!scroller) return;
 
     isDown = true;
     isPanning = false;
     startX = e.clientX;
     startY = e.clientY;
-    scrollLeft = el.scrollLeft;
-    scrollTop = el.scrollTop;
-
-    // Evita que el drag nativo de tarjetas/columnas le gane al gesto de paneo.
-    // Si no se mueve el mouse, el click de la tarjeta sigue funcionando normalmente.
-    disableNativeDragging();
+    scrollLeft = scroller.scrollLeft;
+    scrollTop = scroller.scrollTop;
   }
 
-  function onMouseMove(e) {
+  function onPointerMove(e) {
     if (!isDown) return;
+    const scroller = activeScroller();
+    if (!scroller) return;
 
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-    if (!isPanning && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+    if (!isPanning && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
 
     isPanning = true;
-    el.classList.add('panning');
+    scroller.classList.add('panning');
     e.preventDefault();
-    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    else e.stopPropagation();
 
-    el.scrollLeft = scrollLeft - dx;
-    el.scrollTop = scrollTop - dy;
+    scroller.scrollLeft = scrollLeft - dx;
+    scroller.scrollTop = scrollTop - dy;
   }
 
-  function onMouseUp() {
+  function onPointerUp() {
     if (!isDown) return;
-
+    const scroller = activeScroller();
     isDown = false;
-    el.classList.remove('panning');
-
+    if (scroller) scroller.classList.remove('panning');
     if (isPanning) {
       suppressNextClick = true;
       setTimeout(() => { suppressNextClick = false; }, 0);
     }
-
-    // Se restaura después del click para no romper la apertura de tareas.
-    setTimeout(restoreNativeDragging, 0);
   }
 
-  el.addEventListener('mousedown', onMouseDown, true);
-  document.addEventListener('mousemove', onMouseMove, true);
-  document.addEventListener('mouseup', onMouseUp, true);
-  window.addEventListener('blur', onMouseUp);
+  document.addEventListener('mousedown', onPointerDown, true);
+  document.addEventListener('mousemove', onPointerMove, true);
+  document.addEventListener('mouseup', onPointerUp, true);
+  window.addEventListener('blur', onPointerUp);
 
-  el.addEventListener('click', (e) => {
+  document.addEventListener('click', (e) => {
     if (!suppressNextClick) return;
+    if (!isInsideActiveScroller(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
     if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
