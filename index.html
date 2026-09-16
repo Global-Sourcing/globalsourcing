@@ -3112,6 +3112,71 @@
   .board-drag-pan-ready { cursor: grab !important; }
   .board-drag-pan-ready.panning, .board-drag-pan-ready.panning * { cursor: grabbing !important; user-select: none !important; }
 
+  /* === Comentarios con fecha === */
+  #task-modal .comment-entry-box {
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--line-soft);
+  }
+  #task-modal .comment-entry-box .comment-entry-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink-mute);
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  #task-modal #t-new-comment {
+    width: 100%;
+    min-height: 52px !important;
+    height: 52px !important;
+    max-height: 100px !important;
+    flex: 0 0 auto !important;
+    resize: vertical !important;
+    overflow-y: auto !important;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    border-radius: var(--radius);
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  #task-modal #t-new-comment:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: var(--paper);
+    box-shadow: 0 0 0 3px rgba(164,117,53,.15);
+  }
+  #task-modal .comment-entry-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+  }
+  #task-modal #t-comment-date {
+    width: 126px;
+    height: 30px;
+    padding: 4px 7px;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    border-radius: var(--radius);
+    font: inherit;
+    font-size: 11.5px;
+    color: var(--ink);
+  }
+  #task-modal #t-add-comment {
+    height: 30px;
+    margin-left: auto;
+    padding: 0 10px;
+    font-size: 11.5px;
+  }
+  #task-modal .comment-entry-hint {
+    color: var(--ink-mute);
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
 </style>
 </head>
 <body>
@@ -3341,7 +3406,16 @@
           <div class="field field-fill">
             <label>Comentarios</label>
             <div class="comments-box">
-              <textarea id="t-meeting-note" placeholder="Notas, comentarios, decisiones, cualquier cosa relevante…"></textarea>
+              <textarea id="t-meeting-note" placeholder="Historial de notas, comentarios y decisiones…"></textarea>
+              <div class="comment-entry-box">
+                <span class="comment-entry-label">Nueva actualización</span>
+                <textarea id="t-new-comment" placeholder="Escribí lo nuevo de esta reunión…"></textarea>
+                <div class="comment-entry-actions">
+                  <input type="date" id="t-comment-date" aria-label="Fecha del comentario" />
+                  <span class="comment-entry-hint">Se agrega al historial con esta fecha.</span>
+                  <button type="button" class="btn btn-compact" id="t-add-comment">Agregar con fecha</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="field dep-field">
@@ -4634,6 +4708,10 @@ function openTaskModal(taskId, isNew = false) {
   document.getElementById('t-completed-date').value = t.completedDate || '';
   document.getElementById('t-completed-wrap').style.display = t.completedDate ? 'block' : 'none';
   document.getElementById('t-meeting-note').value = t.meetingNote || '';
+  const newCommentInput = document.getElementById('t-new-comment');
+  const commentDateInput = document.getElementById('t-comment-date');
+  if (newCommentInput) newCommentInput.value = '';
+  if (commentDateInput) commentDateInput.value = todayISO();
   updateTaskDateCounters();
 
   refreshTaskStatusPills(t.status);
@@ -4732,6 +4810,50 @@ function refreshTaskStatusPills(status) {
 function closeTaskModal() {
   taskModal.classList.remove('open');
   editingTaskId = null;
+}
+
+function formatCommentDate(iso) {
+  const value = iso || todayISO();
+  const parts = value.split('-');
+  if (parts.length !== 3) return value;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function addDatedComment() {
+  if (!editingTaskId) return;
+  const input = document.getElementById('t-new-comment');
+  const dateInput = document.getElementById('t-comment-date');
+  const history = document.getElementById('t-meeting-note');
+  if (!input || !history) return;
+
+  const comment = input.value.trim();
+  if (!comment) {
+    input.focus();
+    return;
+  }
+
+  const date = dateInput && dateInput.value ? dateInput.value : todayISO();
+  const entry = `[${formatCommentDate(date)}] ${comment}`;
+  const previous = history.value.trim();
+  history.value = previous ? `${previous}\n\n${entry}` : entry;
+  input.value = '';
+  if (dateInput) dateInput.value = todayISO();
+
+  commitTaskModalFields(false);
+  history.scrollTop = history.scrollHeight;
+  input.focus();
+}
+
+const addCommentBtn = document.getElementById('t-add-comment');
+if (addCommentBtn) addCommentBtn.addEventListener('click', addDatedComment);
+const newCommentInput = document.getElementById('t-new-comment');
+if (newCommentInput) {
+  newCommentInput.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      addDatedComment();
+    }
+  });
 }
 
 /* ---------- Catalog: tags across all boards ---------- */
