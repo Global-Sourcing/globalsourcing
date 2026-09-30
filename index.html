@@ -2248,6 +2248,22 @@
     background: var(--paper) !important;
     border-radius: 3px !important;
   }
+  #task-modal .dep-other-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1px 0 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #task-modal .dep-other-toggle:hover { border-color: var(--gold); }
+  #task-modal .dep-other-picker[hidden] { display: none !important; }
 
 
   /* === Ajustes v8: dependencias más visibles y tipografía negra === */
@@ -4567,6 +4583,7 @@ function renderCard(t) {
     e.stopPropagation();
     showCtxMenu(e.clientX, e.clientY, [
       { label: 'Abrir tarea', fn: () => openTaskModal(t.id) },
+      { label: 'Copiar a otro depósito', fn: () => copyTaskToAnotherColumn(t.id) },
       { label: 'Copiar a otro gestor', fn: () => copyTaskToAnotherBoard(t.id) },
       { label: 'Mover a otro gestor', fn: () => moveTaskToAnotherBoard(t.id) },
       { label: 'Eliminar tarea', danger: true, fn: () => deleteTaskById(t.id, true) }
@@ -4737,13 +4754,13 @@ function refreshAssigneeSelect(currentValue) {
     : String(currentValue || '').split(',').map(x => x.trim()).filter(Boolean);
   const currentSet = new Set(currentValues);
   sel.innerHTML = '<option value="">— Sin asignar —</option>';
-  const members = [...new Set([...(board.members || []), ...currentValues])]
+  const members = [...new Set([...(board.members || []), 'Definiciones', ...currentValues])]
     .filter(Boolean)
     .sort((a,b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
   members.forEach(m => {
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = (board.members || []).includes(m) ? m : `${m} (no en lista)`;
+    opt.textContent = ((board.members || []).includes(m) || m === 'Definiciones') ? m : `${m} (no en lista)`;
     opt.selected = currentSet.has(m);
     sel.appendChild(opt);
   });
@@ -4775,7 +4792,7 @@ function refreshAssigneeSelect(currentValue) {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'assignee-option' + (currentSet.has(m) ? ' selected' : '');
-    row.innerHTML = `<span class="check">${currentSet.has(m) ? '✓' : ''}</span><span>${escapeHtml((board.members || []).includes(m) ? m : `${m} (no en lista)`)}</span>`;
+    row.innerHTML = `<span class="check">${currentSet.has(m) ? '✓' : ''}</span><span>${escapeHtml(((board.members || []).includes(m) || m === 'Definiciones') ? m : `${m} (no en lista)`)}</span>`;
     row.onclick = (e) => {
       e.preventDefault();
       const opt = [...sel.options].find(o => o.value === m);
@@ -5237,30 +5254,71 @@ function renderDepsEditor(t) {
     deps.forEach(dep => list.appendChild(makeDepRow(dep, 'dependency')));
   }
 
-  const picker = document.createElement('select');
-  picker.className = 'dep-picker';
-  picker.innerHTML = '<option value="">+ Vincular a otra tarea…</option>';
-  board.tasks.forEach(x => {
-    if (x.id === t.id) return;
-    if (x.colId !== t.colId) return;
-    if ((t.deps || []).includes(x.id)) return;
-    const col = board.columns.find(c => c.id === x.colId);
+  const availableDeps = board.tasks.filter(x =>
+    x.id !== t.id &&
+    x.status !== 'done' &&
+    !(t.deps || []).includes(x.id)
+  );
+
+  const addDependency = (taskId) => {
+    if (!taskId) return;
+    t.deps = t.deps || [];
+    if (!t.deps.includes(taskId)) t.deps.push(taskId);
+    syncDependencyStatuses(board);
+    saveState();
+    refreshTaskStatusPills(t.status);
+    renderDepsEditor(t);
+  };
+
+  const samePicker = document.createElement('select');
+  samePicker.className = 'dep-picker';
+  samePicker.innerHTML = '<option value="">+ Vincular tarea de este depósito…</option>';
+  availableDeps.filter(x => x.colId === t.colId).forEach(x => {
     const opt = document.createElement('option');
     opt.value = x.id;
-    opt.textContent = `${x.title || '(sin título)'} — ${col ? col.name : ''}`;
-    picker.appendChild(opt);
+    opt.textContent = x.title || '(sin título)';
+    samePicker.appendChild(opt);
   });
-  picker.onchange = () => {
-    if (picker.value) {
-      t.deps = t.deps || [];
-      t.deps.push(picker.value);
-      syncDependencyStatuses(board);
-      saveState();
-      refreshTaskStatusPills(t.status);
-      renderDepsEditor(t);
-    }
-  };
-  list.appendChild(picker);
+  if (samePicker.options.length === 1) {
+    samePicker.options[0].textContent = 'Sin tareas pendientes en este depósito';
+    samePicker.disabled = true;
+  }
+  samePicker.onchange = () => addDependency(samePicker.value);
+  list.appendChild(samePicker);
+
+  const otherDeps = availableDeps.filter(x => x.colId !== t.colId);
+  if (otherDeps.length) {
+    const otherToggle = document.createElement('button');
+    otherToggle.type = 'button';
+    otherToggle.className = 'dep-other-toggle';
+    otherToggle.textContent = `Otras (${otherDeps.length})`;
+    list.appendChild(otherToggle);
+
+    const otherPicker = document.createElement('select');
+    otherPicker.className = 'dep-picker dep-other-picker';
+    otherPicker.hidden = true;
+    otherPicker.innerHTML = '<option value="">+ Elegir tarea de otro depósito…</option>';
+
+    board.columns.forEach(col => {
+      const tasks = otherDeps.filter(x => x.colId === col.id);
+      if (!tasks.length) return;
+      const group = document.createElement('optgroup');
+      group.label = col.name;
+      tasks.forEach(x => {
+        const opt = document.createElement('option');
+        opt.value = x.id;
+        opt.textContent = x.title || '(sin título)';
+        group.appendChild(opt);
+      });
+      otherPicker.appendChild(group);
+    });
+    otherPicker.onchange = () => addDependency(otherPicker.value);
+    otherToggle.onclick = () => {
+      otherPicker.hidden = !otherPicker.hidden;
+      otherToggle.textContent = otherPicker.hidden ? `Otras (${otherDeps.length})` : 'Ocultar otras';
+    };
+    list.appendChild(otherPicker);
+  }
 
   const depdLabel = document.createElement('div');
   depdLabel.className = 'dep-section-label';
@@ -5406,6 +5464,33 @@ function cloneTaskForBoard(task, targetColId) {
     subtasks: (task.subtasks || []).map(s => ({...s})),
     tags: (task.tags || []).map(g => ({...g}))
   };
+}
+
+function copyTaskToAnotherColumn(taskId) {
+  const board = currentBoard();
+  const task = board.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const options = (board.columns || []).filter(c => c.id !== task.colId);
+  if (!options.length) {
+    alert('No hay otro depósito disponible en este gestor.');
+    return;
+  }
+  const text = options.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
+  const answer = prompt(`Elegí el depósito de destino:
+${text}
+
+Escribí el número:`);
+  if (!answer) return;
+  const idx = parseInt(answer, 10) - 1;
+  if (Number.isNaN(idx) || !options[idx]) {
+    alert('Número inválido.');
+    return;
+  }
+  const targetCol = options[idx];
+  board.tasks.push(cloneTaskForBoard(task, targetCol.id));
+  saveState();
+  render();
+  toast(`Tarea copiada a ${targetCol.name}`);
 }
 
 function copyTaskToAnotherBoard(taskId) {
@@ -6027,7 +6112,7 @@ function minuteDateMeta(t, html = false) {
 
 
 function tasksForWrittenSummary(board = currentBoard()) {
-  const selected = getSelectedTasks();
+  const selected = getSelectedTasks().filter(t => t.status !== 'done');
   const base = selected.length ? selected : board.tasks.filter(t => t.status !== 'done' && cardMatchesFilters(t));
   return sortTasksForOutput(base);
 }
@@ -6036,26 +6121,25 @@ function responsibleLabel(name) {
   return name && name.trim() ? name.trim() : 'Sin responsable';
 }
 
-function taskShortLine(t, board = currentBoard()) {
-  const col = columnForTask(t, board);
+function minuteDeadlineText(t) {
+  if (!t || !t.date) return 'Sin deadline';
+  const [y, m, d] = String(t.date).split('-');
+  return `Deadline ${parseInt(d, 10)}/${parseInt(m, 10)}`;
+}
+
+function isDefinitionsGroup(name) {
+  return String(name || '').trim().toLocaleLowerCase('es') === 'definiciones';
+}
+
+function taskMinuteLine(t, board = currentBoard()) {
   const depInfo = dependencyInfoText(t, board);
-  const pieces = [col ? col.name : 'Sin depósito', t.title || 'Sin título', analysisTaskDateMeta(t)];
+  const pieces = [t.title || 'Sin título', minuteDeadlineText(t)];
   if (depInfo) pieces.push(depInfo);
   return pieces.join(' — ');
 }
 
-function personTaskFocus(tasks, board = currentBoard()) {
-  return sortTasksForOutput(tasks)
-    .filter(t => {
-      if (t.status === 'done') return false;
-      const diff = daysDiffFromToday(t.date);
-      return (diff !== null && diff <= 15) || t.status === 'blocked' || isBlockingTask(t, board);
-    })
-    .slice(0, 6);
-}
-
 function buildResponsibleSummaryData(board = currentBoard()) {
-  const tasks = tasksForWrittenSummary(board);
+  const tasks = tasksForWrittenSummary(board).filter(t => t.status !== 'done');
   const byPerson = new Map();
   tasks.forEach(t => {
     const names = getTaskAssignees(t);
@@ -6066,12 +6150,26 @@ function buildResponsibleSummaryData(board = currentBoard()) {
     });
   });
   return [...byPerson.entries()]
-    .map(([name, personTasks]) => ({ name, tasks: sortTasksForOutput(personTasks) }))
+    .filter(([, personTasks]) => personTasks.some(t => t.status !== 'done'))
+    .map(([name, personTasks]) => ({ name, tasks: sortTasksForOutput(personTasks.filter(t => t.status !== 'done')) }))
     .sort((a,b) => {
+      if (isDefinitionsGroup(a.name)) return -1;
+      if (isDefinitionsGroup(b.name)) return 1;
       if (a.name === 'Seguimiento') return 1;
       if (b.name === 'Seguimiento') return -1;
       return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
     });
+}
+
+function groupMinuteTasksByDeposit(tasks, board = currentBoard()) {
+  const byDeposit = new Map();
+  sortTasksForOutput(tasks).forEach(t => {
+    const col = columnForTask(t, board);
+    const key = col ? col.id : '__none__';
+    if (!byDeposit.has(key)) byDeposit.set(key, { name: col ? col.name : 'Sin depósito', tasks: [] });
+    byDeposit.get(key).tasks.push(t);
+  });
+  return [...byDeposit.values()];
 }
 
 function buildMinuteText() {
@@ -6087,23 +6185,17 @@ function buildMinuteText() {
 
   groups.forEach((group, idx) => {
     if (idx > 0) body += `\n`;
-    const active = group.tasks.filter(t => t.status !== 'done');
-    const overdue = active.filter(t => isTaskOverdue(t));
-    const dueSoon = active.filter(t => isTaskDueSoon(t));
-    const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
-    const blocking = active.filter(t => isBlockingTask(t, board));
-    const noDate = active.filter(t => !t.date);
     body += `${group.name}\n`;
-    body += `• ${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
-    if (noDate.length) body += ` · ${noDate.length} sin fecha`;
-    body += `\n`;
-    const details = group.name === 'Seguimiento' ? active : (personTaskFocus(group.tasks, board).length ? personTaskFocus(group.tasks, board) : active.slice(0, 6));
-    if (details.length) {
-      body += `• Detalle:\n`;
-      details.forEach(t => {
-        body += `  - ${taskShortLine(t, board)}\n`;
+    const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+    deposits.forEach(dep => {
+      body += `${dep.name}\n`;
+      dep.tasks.forEach(t => {
+        body += `• ${taskMinuteLine(t, board)}\n`;
+        if (isDefinitionsGroup(group.name) && (t.desc || '').trim()) {
+          body += `  ${(t.desc || '').trim()}\n`;
+        }
       });
-    }
+    });
   });
   return body;
 }
@@ -6120,31 +6212,23 @@ function buildMinuteHTML() {
   }
 
   groups.forEach((group, idx) => {
-    const active = group.tasks.filter(t => t.status !== 'done');
-    const overdue = active.filter(t => isTaskOverdue(t));
-    const dueSoon = active.filter(t => isTaskDueSoon(t));
-    const blocked = active.filter(t => t.status === 'blocked' || taskBlockingNames(t, board).some(dep => dep.status !== 'done'));
-    const blocking = active.filter(t => isBlockingTask(t, board));
-    const noDate = active.filter(t => !t.date);
     h += `<div style="margin:${idx ? '12px' : '0'} 0 14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
-    h += `<div style="font-size:12pt;font-weight:700;color:#000;margin-bottom:3px">${esc(group.name)}</div>`;
-    h += `<div style="margin-bottom:5px;color:#000">`;
-    h += `${active.length} activas · ${overdue.length} vencidas · ${dueSoon.length} próximas · ${blocked.length} bloqueadas · ${blocking.length} bloqueantes`;
-    if (noDate.length) h += ` · ${noDate.length} sin fecha`;
-    h += `</div>`;
-    const details = group.name === 'Seguimiento' ? active : (personTaskFocus(group.tasks, board).length ? personTaskFocus(group.tasks, board) : active.slice(0, 6));
-    if (details.length) {
-      h += `<ul style="margin:4px 0 0 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
-      details.forEach(t => {
-        const col = columnForTask(t, board);
+    h += `<div style="font-size:12pt;font-weight:700;color:#000;margin-bottom:5px">${esc(group.name)}</div>`;
+    const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+    deposits.forEach(dep => {
+      h += `<div style="font-weight:700;color:#000;margin:6px 0 2px">${esc(dep.name)}</div>`;
+      h += `<ul style="margin:2px 0 6px 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+      dep.tasks.forEach(t => {
         const depInfo = dependencyInfoText(t, board);
-        h += `<li style="margin:4px 0 6px;color:#000">`;
-        h += `<b>${esc(col ? col.name : 'Sin depósito')}</b> — ${esc(t.title || 'Sin título')} — <span style="color:#000">${esc(analysisTaskDateMeta(t))}</span>`;
-        if (depInfo) h += `<div style="font-size:12pt;color:#000;margin-top:2px">(${esc(depInfo)})</div>`;
+        h += `<li style="margin:3px 0 5px;color:#000">${esc(t.title || 'Sin título')} — ${esc(minuteDeadlineText(t))}`;
+        if (depInfo) h += ` — ${esc(depInfo)}`;
+        if (isDefinitionsGroup(group.name) && (t.desc || '').trim()) {
+          h += `<div style="margin-top:2px;color:#000">${esc((t.desc || '').trim())}</div>`;
+        }
         h += `</li>`;
       });
       h += `</ul>`;
-    }
+    });
     h += `</div>`;
   });
 
