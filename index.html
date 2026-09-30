@@ -3306,6 +3306,13 @@
     <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 4.5 3 3 3-3"/></svg>
     <div class="filter-menu" id="filter-status-menu"></div>
   </button>
+  <button class="filter-chip" id="filter-deadline" type="button">
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M5 2v3M11 2v3M2.5 6.5h11"/></svg>
+    Deadline
+    <span class="chip-count" id="filter-deadline-count">0</span>
+    <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 4.5 3 3 3-3"/></svg>
+    <div class="filter-menu" id="filter-deadline-menu"></div>
+  </button>
   <button class="clear-filters" id="clear-filters" type="button">
     <svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 3 6 6M9 3l-6 6"/></svg>
     Limpiar filtros
@@ -3628,7 +3635,8 @@ let filterState = {
   statuses: new Set(),
   priorities: new Set(),
   depositos: new Set(),
-  regions: new Set()
+  regions: new Set(),
+  deadlines: new Set()
 };
 let analysisOpenKpi = null;
 
@@ -4241,7 +4249,7 @@ function updateFilterResultCount() {
   if (!board) return;
   const total = board.tasks.length;
   const visible = board.tasks.filter(t => cardMatchesFilters(t)).length;
-  const anyActive = filterState.search || filterState.assignees.size || filterState.tags.size || filterState.statuses.size || filterState.priorities.size || filterState.depositos.size || filterState.regions.size;
+  const anyActive = filterState.search || filterState.assignees.size || filterState.tags.size || filterState.statuses.size || filterState.priorities.size || filterState.depositos.size || filterState.regions.size || filterState.deadlines.size;
   const rc = document.getElementById('filter-result-count');
   if (rc) rc.textContent = anyActive ? `${visible} de ${total} tareas` : '';
 }
@@ -4643,6 +4651,11 @@ function cardMatchesFilters(t) {
     const col = currentBoard().columns.find(c => c.id === t.colId);
     const region = col && col.region ? col.region : '__no_region__';
     if (!filterState.regions.has(region)) return false;
+  }
+  if (filterState.deadlines.size > 0) {
+    const deadlineMode = [...filterState.deadlines][0];
+    if (deadlineMode === '__with_deadline__' && !t.date) return false;
+    if (deadlineMode === '__without_deadline__' && t.date) return false;
   }
   return true;
 }
@@ -5865,7 +5878,7 @@ function setupFilterChip(chipId, menuId, getOptions, stateKey) {
     menu.innerHTML = '';
     const header = document.createElement('div');
     header.className = 'filter-menu-header';
-    const allLabel = stateKey === 'assignees' ? 'Asignados' : stateKey === 'tags' ? 'Etiquetas' : stateKey === 'priorities' ? 'Prioridades' : stateKey === 'depositos' ? 'Depósitos' : stateKey === 'regions' ? 'BU' : 'Estados';
+    const allLabel = stateKey === 'assignees' ? 'Asignados' : stateKey === 'tags' ? 'Etiquetas' : stateKey === 'priorities' ? 'Prioridades' : stateKey === 'depositos' ? 'Depósitos' : stateKey === 'regions' ? 'BU' : stateKey === 'deadlines' ? 'Deadline' : 'Estados';
     header.innerHTML = `<span>${allLabel}</span><button type="button" data-clear>Limpiar</button>`;
     header.querySelector('[data-clear]').onclick = (ev) => {
       ev.stopPropagation();
@@ -5941,7 +5954,13 @@ function setupFilterChip(chipId, menuId, getOptions, stateKey) {
 
       row.onclick = (ev) => {
         ev.stopPropagation();
-        if (filterState[stateKey].has(opt.value)) filterState[stateKey].delete(opt.value);
+        if (stateKey === 'deadlines') {
+          if (filterState[stateKey].has(opt.value)) filterState[stateKey].clear();
+          else {
+            filterState[stateKey].clear();
+            filterState[stateKey].add(opt.value);
+          }
+        } else if (filterState[stateKey].has(opt.value)) filterState[stateKey].delete(opt.value);
         else filterState[stateKey].add(opt.value);
         applyFilters();
         rebuildMenu();
@@ -6032,6 +6051,13 @@ const f3 = setupFilterChip('filter-status', 'filter-status-menu', () => {
   ];
 }, 'statuses');
 
+const fDeadline = setupFilterChip('filter-deadline', 'filter-deadline-menu', () => {
+  return [
+    { value: '__with_deadline__', label: 'Con deadline' },
+    { value: '__without_deadline__', label: 'Sin deadline' }
+  ];
+}, 'deadlines');
+
 function applyFilters() {
   // Update chip counts and active state
   const a = filterState.assignees.size;
@@ -6040,20 +6066,23 @@ function applyFilters() {
   const pr = filterState.priorities.size;
   const dp = filterState.depositos.size;
   const rg = filterState.regions.size;
+  const dl = filterState.deadlines.size;
   document.getElementById('filter-assignee').classList.toggle('active', a > 0);
   document.getElementById('filter-tag').classList.toggle('active', tg > 0);
   document.getElementById('filter-status').classList.toggle('active', st > 0);
   document.getElementById('filter-priority').classList.toggle('active', pr > 0);
   document.getElementById('filter-deposito').classList.toggle('active', dp > 0);
   document.getElementById('filter-region').classList.toggle('active', rg > 0);
+  document.getElementById('filter-deadline').classList.toggle('active', dl > 0);
   document.getElementById('filter-assignee-count').textContent = a;
   document.getElementById('filter-tag-count').textContent = tg;
   document.getElementById('filter-status-count').textContent = st;
   document.getElementById('filter-priority-count').textContent = pr;
   document.getElementById('filter-deposito-count').textContent = dp;
   document.getElementById('filter-region-count').textContent = rg;
+  document.getElementById('filter-deadline-count').textContent = dl;
 
-  const anyActive = filterState.search || a > 0 || tg > 0 || st > 0 || pr > 0 || dp > 0 || rg > 0;
+  const anyActive = filterState.search || a > 0 || tg > 0 || st > 0 || pr > 0 || dp > 0 || rg > 0 || dl > 0;
   document.getElementById('clear-filters').classList.toggle('visible', !!anyActive);
 
   // Update visibility of cards
@@ -6079,6 +6108,7 @@ document.getElementById('clear-filters').onclick = () => {
   filterState.priorities.clear();
   filterState.depositos.clear();
   filterState.regions.clear();
+  filterState.deadlines.clear();
   searchInput.value = '';
   applyFilters();
 };
@@ -6121,8 +6151,8 @@ function responsibleLabel(name) {
   return name && name.trim() ? name.trim() : 'Sin responsable';
 }
 
-function minuteDeadlineText(t) {
-  if (!t || !t.date) return 'Sin deadline';
+function minuteDeadlineText(t, suppressEmpty = false) {
+  if (!t || !t.date) return suppressEmpty ? '' : 'Sin deadline';
   const [y, m, d] = String(t.date).split('-');
   return `Deadline ${parseInt(d, 10)}/${parseInt(m, 10)}`;
 }
@@ -6131,9 +6161,11 @@ function isDefinitionsGroup(name) {
   return String(name || '').trim().toLocaleLowerCase('es') === 'definiciones';
 }
 
-function taskMinuteLine(t, board = currentBoard()) {
+function taskMinuteLine(t, board = currentBoard(), groupName = '') {
   const depInfo = dependencyInfoText(t, board);
-  const pieces = [t.title || 'Sin título', minuteDeadlineText(t)];
+  const pieces = [t.title || 'Sin título'];
+  const deadline = minuteDeadlineText(t, isDefinitionsGroup(groupName));
+  if (deadline) pieces.push(deadline);
   if (depInfo) pieces.push(depInfo);
   return pieces.join(' — ');
 }
@@ -6183,20 +6215,38 @@ function buildMinuteText() {
     return body;
   }
 
-  groups.forEach((group, idx) => {
-    if (idx > 0) body += `\n`;
-    body += `${group.name}\n`;
-    const deposits = groupMinuteTasksByDeposit(group.tasks, board);
-    deposits.forEach(dep => {
-      body += `${dep.name}\n`;
-      dep.tasks.forEach(t => {
-        body += `• ${taskMinuteLine(t, board)}\n`;
-        if (isDefinitionsGroup(group.name) && (t.desc || '').trim()) {
-          body += `  ${(t.desc || '').trim()}\n`;
-        }
+  const definitionGroups = groups.filter(group => isDefinitionsGroup(group.name));
+  const pendingGroups = groups.filter(group => !isDefinitionsGroup(group.name));
+
+  if (definitionGroups.length) {
+    body += `DEFINICIONES\n`;
+    definitionGroups.forEach(group => {
+      const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+      deposits.forEach(dep => {
+        body += `${dep.name}\n`;
+        dep.tasks.forEach(t => {
+          body += `• ${taskMinuteLine(t, board, group.name)}\n`;
+          if ((t.desc || '').trim()) body += `  ${(t.desc || '').trim()}\n`;
+        });
       });
     });
-  });
+  }
+
+  if (pendingGroups.length) {
+    if (body) body += `\n`;
+    body += `PENDIENTES\n`;
+    pendingGroups.forEach((group, idx) => {
+      if (idx > 0) body += `\n`;
+      body += `${group.name}\n`;
+      const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+      deposits.forEach(dep => {
+        body += `${dep.name}\n`;
+        dep.tasks.forEach(t => {
+          body += `• ${taskMinuteLine(t, board, group.name)}\n`;
+        });
+      });
+    });
+  }
   return body;
 }
 
@@ -6211,26 +6261,58 @@ function buildMinuteHTML() {
     return h;
   }
 
-  groups.forEach((group, idx) => {
-    h += `<div style="margin:${idx ? '12px' : '0'} 0 14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
-    h += `<div style="font-size:12pt;font-weight:700;color:#000;margin-bottom:5px">${esc(group.name)}</div>`;
-    const deposits = groupMinuteTasksByDeposit(group.tasks, board);
-    deposits.forEach(dep => {
-      h += `<div style="font-weight:700;color:#000;margin:6px 0 2px">${esc(dep.name)}</div>`;
-      h += `<ul style="margin:2px 0 6px 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
-      dep.tasks.forEach(t => {
-        const depInfo = dependencyInfoText(t, board);
-        h += `<li style="margin:3px 0 5px;color:#000">${esc(t.title || 'Sin título')} — ${esc(minuteDeadlineText(t))}`;
-        if (depInfo) h += ` — ${esc(depInfo)}`;
-        if (isDefinitionsGroup(group.name) && (t.desc || '').trim()) {
-          h += `<div style="margin-top:2px;color:#000">${esc((t.desc || '').trim())}</div>`;
-        }
-        h += `</li>`;
+  const definitionGroups = groups.filter(group => isDefinitionsGroup(group.name));
+  const pendingGroups = groups.filter(group => !isDefinitionsGroup(group.name));
+  const sectionTitleStyle = 'font-size:14pt;font-weight:700;font-style:italic;color:#000;margin:0 0 7px;font-family:Calibri, Arial, sans-serif';
+
+  if (definitionGroups.length) {
+    h += `<div style="margin:0 0 16px;color:#000">`;
+    h += `<div style="${sectionTitleStyle}">DEFINICIONES</div>`;
+    definitionGroups.forEach(group => {
+      const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+      deposits.forEach(dep => {
+        h += `<div style="font-weight:700;color:#000;margin:6px 0 2px">${esc(dep.name)}</div>`;
+        h += `<ul style="margin:2px 0 6px 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+        dep.tasks.forEach(t => {
+          const depInfo = dependencyInfoText(t, board);
+          const deadline = minuteDeadlineText(t, true);
+          h += `<li style="margin:3px 0 5px;color:#000">${esc(t.title || 'Sin título')}`;
+          if (deadline) h += ` — ${esc(deadline)}`;
+          if (depInfo) h += ` — ${esc(depInfo)}`;
+          if ((t.desc || '').trim()) h += `<div style="margin-top:2px;color:#000">${esc((t.desc || '').trim())}</div>`;
+          h += `</li>`;
+        });
+        h += `</ul>`;
       });
-      h += `</ul>`;
     });
     h += `</div>`;
-  });
+  }
+
+  if (pendingGroups.length) {
+    h += `<div style="margin:${definitionGroups.length ? '12px' : '0'} 0 8px;color:#000">`;
+    h += `<div style="${sectionTitleStyle}">PENDIENTES</div>`;
+    h += `</div>`;
+
+    pendingGroups.forEach((group, idx) => {
+      h += `<div style="margin:${idx ? '12px' : '0'} 0 14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+      h += `<div style="font-size:12pt;font-weight:700;color:#000;margin-bottom:5px">${esc(group.name)}</div>`;
+      const deposits = groupMinuteTasksByDeposit(group.tasks, board);
+      deposits.forEach(dep => {
+        h += `<div style="font-weight:700;color:#000;margin:6px 0 2px">${esc(dep.name)}</div>`;
+        h += `<ul style="margin:2px 0 6px 18px;padding-left:14px;color:#000;font-family:Calibri, Arial, sans-serif;font-size:12pt">`;
+        dep.tasks.forEach(t => {
+          const depInfo = dependencyInfoText(t, board);
+          const deadline = minuteDeadlineText(t, false);
+          h += `<li style="margin:3px 0 5px;color:#000">${esc(t.title || 'Sin título')}`;
+          if (deadline) h += ` — ${esc(deadline)}`;
+          if (depInfo) h += ` — ${esc(depInfo)}`;
+          h += `</li>`;
+        });
+        h += `</ul>`;
+      });
+      h += `</div>`;
+    });
+  }
 
   h += `</div>`;
   return h;
