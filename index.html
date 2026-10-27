@@ -3169,6 +3169,7 @@
   #task-modal .rich-comment-body img { display:block; max-width:100%; max-height:430px; width:auto; height:auto; object-fit:contain; margin:7px 0; border-radius:6px; cursor:zoom-in; }
   #task-modal .rich-comment-delete { background:transparent; border:0; color:var(--ink-mute); cursor:pointer; }
   #task-modal .rich-comment-delete:hover { color:var(--wine); }
+  #task-modal .rich-comment-head > span:last-child { display:flex; gap:12px; }
   #task-modal #t-new-comment:focus {
     outline: none;
     border-color: var(--gold);
@@ -3438,18 +3439,18 @@
             <textarea id="t-desc" placeholder="Breve explicación de la tarea…"></textarea>
           </div>
           <div class="field field-fill">
-            <label>Comentarios</label>
+            <label>Actualizaciones</label>
             <div class="comments-box">
-              <textarea id="t-meeting-note" placeholder="Historial de notas, comentarios y decisiones…"></textarea>
+              <textarea id="t-meeting-note" style="display:none" aria-hidden="true" tabindex="-1"></textarea>
               <div class="comment-entry-box">
                 <span class="comment-entry-label">Nueva actualización</span>
                 <div id="t-new-comment" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribí y pegá capturas aquí (Ctrl+V)…"></div>
-                <div id="t-rich-comments" class="rich-comments" aria-live="polite"></div>
                 <div class="comment-entry-actions">
                   <input type="date" id="t-comment-date" aria-label="Fecha del comentario" />
-                  <span class="comment-entry-hint">Se agrega al historial con esta fecha.</span>
-                  <button type="button" class="btn btn-compact" id="t-add-comment">Agregar con fecha</button>
+                  <button type="button" class="btn btn-compact" id="t-cancel-comment-edit" style="display:none">Cancelar</button>
+                  <button type="button" class="btn btn-compact" id="t-add-comment">Agregar</button>
                 </div>
+                <div id="t-rich-comments" class="rich-comments" aria-live="polite"></div>
               </div>
             </div>
           </div>
@@ -4802,6 +4803,8 @@ function openTaskModal(taskId, isNew = false) {
   const newCommentInput = document.getElementById('t-new-comment');
   const commentDateInput = document.getElementById('t-comment-date');
   if (newCommentInput) newCommentInput.innerHTML = '';
+  editingCommentEntryId = null;
+  updateCommentEditingUI();
   renderRichComments(t);
   if (commentDateInput) commentDateInput.value = todayISO();
   updateTaskDateCounters();
@@ -4932,7 +4935,7 @@ function closeTaskModal() {
     } else {
       // Si escribió o pegó una captura en el comentario, conservarla al salir.
       const commentEditor = document.getElementById('t-new-comment');
-      if (commentEditor && escapeRichCommentHtml(commentEditor)) addDatedComment();
+      if (commentEditor && escapeRichCommentHtml(commentEditor) && !editingCommentEntryId) addDatedComment();
       commitTaskModalFields(true);
     }
     pendingNewTaskId = null;
@@ -4967,17 +4970,50 @@ function escapeRichCommentHtml(editor) {
   };
   return [...editor.childNodes].map(walk).join('').replace(/(?:<br>)+$/,'').trim();
 }
+let editingCommentEntryId = null;
+function updateCommentEditingUI() {
+  const button = document.getElementById('t-add-comment');
+  const cancel = document.getElementById('t-cancel-comment-edit');
+  if (button) button.textContent = editingCommentEntryId ? 'Guardar cambios' : 'Agregar';
+  if (cancel) cancel.style.display = editingCommentEntryId ? '' : 'none';
+}
+function cancelCommentEdit() {
+  editingCommentEntryId = null;
+  const input = document.getElementById('t-new-comment');
+  if (input) input.innerHTML = '';
+  const dateInput = document.getElementById('t-comment-date');
+  if (dateInput) dateInput.value = todayISO();
+  updateCommentEditingUI();
+}
 function renderRichComments(task) {
   const host = document.getElementById('t-rich-comments');
   if (!host) return;
   host.innerHTML = '';
-  (task.commentEntries || []).forEach(entry => {
+  // Conservar las notas antiguas en el historial, aunque se haya quitado el campo anterior.
+  const entries = [...(task.commentEntries || [])];
+  if ((task.meetingNote || '').trim()) entries.unshift({id:'__legacy_note__', date: task.createdDate || '', html: escapeHtml(task.meetingNote)});
+  entries.forEach(entry => {
     const wrap = document.createElement('div');
     wrap.className = 'rich-comment';
     const head = document.createElement('div');
     head.className = 'rich-comment-head';
     const date = document.createElement('span');
-    date.textContent = formatCommentDate(entry.date);
+    date.textContent = entry.id === '__legacy_note__' ? 'Nota anterior' : formatCommentDate(entry.date);
+    const actions = document.createElement('span');
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'rich-comment-delete';
+    edit.textContent = 'Editar';
+    edit.title = 'Editar esta actualización';
+    edit.onclick = () => {
+      editingCommentEntryId = entry.id;
+      const input = document.getElementById('t-new-comment');
+      input.innerHTML = entry.html || '';
+      document.getElementById('t-comment-date').value = entry.date || todayISO();
+      updateCommentEditingUI();
+      input.focus();
+      input.scrollIntoView({block:'nearest'});
+    };
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'rich-comment-delete';
@@ -4987,17 +5023,19 @@ function renderRichComments(task) {
       if (!confirm('¿Eliminar esta actualización y sus capturas?')) return;
       const current = currentBoard().tasks.find(t => t.id === editingTaskId);
       if (!current) return;
-      current.commentEntries = (current.commentEntries || []).filter(x => x.id !== entry.id);
+      if (entry.id === '__legacy_note__') {
+        current.meetingNote = '';
+        document.getElementById('t-meeting-note').value = '';
+      } else current.commentEntries = (current.commentEntries || []).filter(x => x.id !== entry.id);
+      if (editingCommentEntryId === entry.id) cancelCommentEdit();
       saveState(); renderRichComments(current);
     };
-    head.append(date, remove);
+    actions.append(edit, remove);
+    head.append(date, actions);
     const body = document.createElement('div');
     body.className = 'rich-comment-body';
-    // Solo renderizamos el HTML permitido por escapeRichCommentHtml.
     body.innerHTML = entry.html || '';
-    body.querySelectorAll('img').forEach(img => {
-      img.addEventListener('click', () => openCommentImage(img.src));
-    });
+    body.querySelectorAll('img').forEach(img => img.addEventListener('click', () => openCommentImage(img.src)));
     wrap.append(head, body);
     host.appendChild(wrap);
   });
@@ -5070,23 +5108,40 @@ function addDatedComment() {
   if (!html) { input.focus(); return; }
   const date = dateInput?.value || todayISO();
   if (!Array.isArray(task.commentEntries)) task.commentEntries = [];
-  const entry = { id: (crypto.randomUUID ? crypto.randomUUID() : 'comment-' + Date.now() + '-' + Math.random().toString(36).slice(2)), date, html };
-  task.commentEntries.push(entry);
+  const oldEntries = task.commentEntries.map(e => ({...e}));
+  const oldLegacyNote = task.meetingNote;
+  if (editingCommentEntryId === '__legacy_note__') {
+    // Pasar una nota antigua editada al mismo formato de actualizaciones enriquecidas.
+    task.meetingNote = '';
+    document.getElementById('t-meeting-note').value = '';
+    task.commentEntries.unshift({id: 'comment-' + Date.now(), date, html});
+  } else if (editingCommentEntryId) {
+    const entry = task.commentEntries.find(e => e.id === editingCommentEntryId);
+    if (!entry) { cancelCommentEdit(); return; }
+    entry.date = date;
+    entry.html = html;
+  } else {
+    const entry = { id: (crypto.randomUUID ? crypto.randomUUID() : 'comment-' + Date.now() + '-' + Math.random().toString(36).slice(2)), date, html };
+    task.commentEntries.push(entry);
+  }
   try {
     saveState();
   } catch(err) {
-    task.commentEntries.pop();
+    task.commentEntries = oldEntries;
+    task.meetingNote = oldLegacyNote;
+    document.getElementById('t-meeting-note').value = oldLegacyNote;
     console.error(err);
     toast('No se pudo guardar: espacio de almacenamiento insuficiente. Usá menos capturas o más pequeñas.');
     return;
   }
-  input.innerHTML = '';
-  if (dateInput) dateInput.value = todayISO();
+  cancelCommentEdit();
   renderRichComments(task);
   input.focus();
 }
 const addCommentBtn = document.getElementById('t-add-comment');
 if (addCommentBtn) addCommentBtn.addEventListener('click', addDatedComment);
+const cancelCommentEditBtn = document.getElementById('t-cancel-comment-edit');
+if (cancelCommentEditBtn) cancelCommentEditBtn.addEventListener('click', cancelCommentEdit);
 const newCommentInput = document.getElementById('t-new-comment');
 if (newCommentInput) {
   newCommentInput.addEventListener('paste', handleCommentPaste);
