@@ -3079,6 +3079,7 @@
     font-size:12px; font-weight:800; line-height:1; transition: opacity .12s, background .12s;
   }
   .card:hover .card-drag-handle { opacity:1; }
+  .card-drag-handle { opacity:1; user-select:none; }
   .card-drag-handle:hover { background:var(--wine-tint); color:var(--wine); border-color:var(--wine); }
   .card-drag-handle:active { cursor:grabbing; }
 
@@ -3158,6 +3159,16 @@
     line-height: 1.4;
     color: var(--ink);
   }
+  #task-modal #t-new-comment { height:auto !important; min-height:75px !important; max-height:260px !important; white-space:pre-wrap; overflow-wrap:anywhere; }
+  #task-modal #t-new-comment:empty:before { content:attr(data-placeholder); color:var(--ink-mute); pointer-events:none; }
+  #task-modal #t-new-comment img { display:block; max-width:100%; max-height:320px; width:auto; height:auto; object-fit:contain; margin:7px 0; border-radius:6px; cursor:zoom-in; }
+  #task-modal .rich-comments { display:flex; flex-direction:column; gap:8px; margin-top:9px; }
+  #task-modal .rich-comment { border:1px solid var(--line); border-radius:var(--radius); padding:9px; background:var(--paper-2); }
+  #task-modal .rich-comment-head { display:flex; justify-content:space-between; gap:10px; margin-bottom:5px; color:var(--ink-mute); font-size:11px; font-weight:600; }
+  #task-modal .rich-comment-body { font-size:12px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
+  #task-modal .rich-comment-body img { display:block; max-width:100%; max-height:430px; width:auto; height:auto; object-fit:contain; margin:7px 0; border-radius:6px; cursor:zoom-in; }
+  #task-modal .rich-comment-delete { background:transparent; border:0; color:var(--ink-mute); cursor:pointer; }
+  #task-modal .rich-comment-delete:hover { color:var(--wine); }
   #task-modal #t-new-comment:focus {
     outline: none;
     border-color: var(--gold);
@@ -3432,7 +3443,8 @@
               <textarea id="t-meeting-note" placeholder="Historial de notas, comentarios y decisiones…"></textarea>
               <div class="comment-entry-box">
                 <span class="comment-entry-label">Nueva actualización</span>
-                <textarea id="t-new-comment" placeholder="Escribí lo nuevo de esta reunión…"></textarea>
+                <div id="t-new-comment" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribí y pegá capturas aquí (Ctrl+V)…"></div>
+                <div id="t-rich-comments" class="rich-comments" aria-live="polite"></div>
                 <div class="comment-entry-actions">
                   <input type="date" id="t-comment-date" aria-label="Fecha del comentario" />
                   <span class="comment-entry-hint">Se agrega al historial con esta fecha.</span>
@@ -3627,6 +3639,8 @@ const STATUSES = {
 
 let state = loadState();
 let editingTaskId = null;
+let pendingNewTaskId = null;
+let pendingNewTaskCreatedDate = null;
 let selectedTasks = new Set(); // IDs of tasks selected for the minute
 let filterState = {
   search: '',
@@ -4199,6 +4213,10 @@ function groupTasksByBUAndDeposito(tasks, board = currentBoard()) {
 const boardEl = document.getElementById('board');
 
 function render() {
+  const previousScrollY = window.scrollY;
+  const boardScrollerBefore = document.getElementById('board-main');
+  const previousBoardScrollX = boardScrollerBefore ? boardScrollerBefore.scrollLeft : 0;
+  const previousBoardScrollY = boardScrollerBefore ? boardScrollerBefore.scrollTop : 0;
   const board = currentBoard();
   if (syncDependencyStatuses(board)) saveState();
   document.getElementById('current-board-name').textContent = board.name;
@@ -4242,6 +4260,12 @@ function render() {
 
   updateSelectionBar();
   updateFilterResultCount();
+  const boardScroller = document.getElementById('board-main');
+  if (boardScroller) {
+    boardScroller.scrollLeft = previousBoardScrollX;
+    boardScroller.scrollTop = previousBoardScrollY;
+  }
+  window.scrollTo(window.scrollX, previousScrollY);
 }
 
 function updateFilterResultCount() {
@@ -4278,8 +4302,8 @@ function renderBoardPickerList() {
 function renderColumn(col) {
   const board = currentBoard();
   const allColTasks = board.tasks.filter(t => t.colId === col.id);
-  const tasks = sortTasksForColumn(allColTasks.filter(t => t.status !== 'done'));
-  const doneTasks = sortTasksForColumn(allColTasks.filter(t => t.status === 'done'));
+  const tasks = allColTasks.filter(t => t.status !== 'done');
+  const doneTasks = allColTasks.filter(t => t.status === 'done');
   const wrap = document.createElement('section');
   wrap.className = 'column';
   wrap.dataset.colId = col.id;
@@ -4485,7 +4509,8 @@ function renderColumn(col) {
     const b = currentBoard();
     const task = sampleTask(col.id, '', []);
     b.tasks.push(task);
-    saveState();
+    pendingNewTaskId = task.id;
+    pendingNewTaskCreatedDate = task.createdDate;
     openTaskModal(task.id, true);
   });
 
@@ -4527,7 +4552,7 @@ function renderCard(t) {
 
   el.innerHTML = `
     <div class="card-select" title="Seleccionar para minuta"></div>
-    <div class="card-drag-handle" title="Arrastrar tarea a otro depósito">↕</div>
+    <div class="card-drag-handle" title="Arrastrar para ordenar o mover la tarea">↕</div>
     <div class="card-topline">
       <span class="priority-badge priority-${t.priority || 'medium'}">${priority.label}</span>
       ${t.completedDate ? `<span class="completed-date">Hecho ${formatDate(t.completedDate)}</span>` : ''}
@@ -4560,7 +4585,10 @@ function renderCard(t) {
       e.stopPropagation();
       el.draggable = true;
     });
-    dragHandle.addEventListener('mouseup', () => { setTimeout(() => { el.draggable = false; }, 0); });
+    dragHandle.addEventListener('click', e => e.stopPropagation());
+    dragHandle.addEventListener('mouseup', () => {
+      if (!el.classList.contains('dragging')) el.draggable = false;
+    });
   }
 
   el.querySelector('.card-check').addEventListener('click', (e) => {
@@ -4584,7 +4612,7 @@ function renderCard(t) {
     updateSelectionBar();
   });
 
-  el.addEventListener('click', () => openTaskModal(t.id));
+  el.addEventListener('click', (e) => { if (!el.classList.contains('dragging')) openTaskModal(t.id); });
 
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -4596,6 +4624,35 @@ function renderCard(t) {
       { label: 'Mover a otro gestor', fn: () => moveTaskToAnotherBoard(t.id) },
       { label: 'Eliminar tarea', danger: true, fn: () => deleteTaskById(t.id, true) }
     ]);
+  });
+
+  // Reordenar tareas arrastrando sobre otra tarjeta, sin alterar sus datos.
+  el.addEventListener('dragover', e => {
+    if (!e.dataTransfer.types.includes('text/task-id')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    const r = el.getBoundingClientRect();
+    el.style.outline = e.clientY < r.top + r.height / 2 ? '2px solid var(--wine)' : '2px dashed var(--wine)';
+  });
+  el.addEventListener('dragleave', () => { el.style.outline = ''; });
+  el.addEventListener('drop', e => {
+    const sourceId = e.dataTransfer.getData('text/task-id');
+    if (!sourceId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    el.style.outline = '';
+    if (sourceId === t.id) return;
+    const b = currentBoard();
+    const from = b.tasks.findIndex(x => x.id === sourceId);
+    if (from < 0) return;
+    const before = e.clientY < el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2;
+    const [moved] = b.tasks.splice(from, 1);
+    moved.colId = t.colId;
+    const target = b.tasks.findIndex(x => x.id === t.id);
+    b.tasks.splice(target + (before ? 0 : 1), 0, moved);
+    saveState();
+    render();
   });
 
   el.addEventListener('dragstart', e => {
@@ -4727,6 +4784,10 @@ function openTaskModal(taskId, isNew = false) {
   const t = currentBoard().tasks.find(x => x.id === taskId);
   if (!t) return;
   editingTaskId = taskId;
+  if (isNew) {
+    pendingNewTaskId = taskId;
+    pendingNewTaskCreatedDate = t.createdDate;
+  }
 
     const taskColumn = currentBoard().columns.find(c => c.id === t.colId);
   document.getElementById('task-modal-title').textContent = taskColumn ? `Depósito: ${taskColumn.name}` : 'Depósito sin nombre';
@@ -4740,7 +4801,8 @@ function openTaskModal(taskId, isNew = false) {
   document.getElementById('t-meeting-note').value = t.meetingNote || '';
   const newCommentInput = document.getElementById('t-new-comment');
   const commentDateInput = document.getElementById('t-comment-date');
-  if (newCommentInput) newCommentInput.value = '';
+  if (newCommentInput) newCommentInput.innerHTML = '';
+  renderRichComments(t);
   if (commentDateInput) commentDateInput.value = todayISO();
   updateTaskDateCounters();
 
@@ -4837,7 +4899,45 @@ function refreshTaskStatusPills(status) {
   });
 }
 
+function isNewTaskDraftEmpty(task) {
+  if (!task) return true;
+  const value = (id) => (document.getElementById(id)?.value || '').trim();
+  const title = value('t-title');
+  const hasComments = (task.commentEntries || []).some(c => c.html || c.text);
+  const hasSubtasks = (task.subtasks || []).some(s => (s.text || '').trim() || s.done);
+  const hasTags = (task.tags || []).length > 0;
+  const hasDeps = (task.deps || []).length > 0;
+  const hasAssignees = getTaskAssignees(task).length > 0;
+  const hasUnsubmittedComment = !!document.getElementById('t-new-comment')?.textContent?.trim()
+    || !!document.getElementById('t-new-comment')?.querySelector('img');
+  return !(
+    (title && title !== '(sin título)') || value('t-desc') || value('t-date') ||
+    value('t-meeting-note') || (value('t-create-date') && value('t-create-date') !== pendingNewTaskCreatedDate) ||
+    value('t-priority') !== 'medium' ||
+    (document.querySelector('#t-status .status-pill.active')?.dataset.status || 'todo') !== 'todo' ||
+    hasAssignees || hasTags || hasSubtasks || hasDeps || hasComments || hasUnsubmittedComment
+  );
+}
 function closeTaskModal() {
+  clearTimeout(autosaveTimer);
+  const taskId = editingTaskId;
+  if (taskId && pendingNewTaskId === taskId) {
+    const board = currentBoard();
+    const task = board.tasks.find(t => t.id === taskId);
+    if (isNewTaskDraftEmpty(task)) {
+      board.tasks = board.tasks.filter(t => t.id !== taskId);
+      selectedTasks.delete(taskId);
+      saveState();
+      render();
+    } else {
+      // Si escribió o pegó una captura en el comentario, conservarla al salir.
+      const commentEditor = document.getElementById('t-new-comment');
+      if (commentEditor && escapeRichCommentHtml(commentEditor)) addDatedComment();
+      commitTaskModalFields(true);
+    }
+    pendingNewTaskId = null;
+    pendingNewTaskCreatedDate = null;
+  }
   taskModal.classList.remove('open');
   editingTaskId = null;
 }
@@ -4849,40 +4949,149 @@ function formatCommentDate(iso) {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
+// Los comentarios anteriores permanecen en meetingNote. Las nuevas actualizaciones
+// se guardan con texto e imágenes intercaladas en commentEntries.
+function escapeRichCommentHtml(editor) {
+  const walk = (node) => {
+    if (node.nodeType === 3) return escapeHtml(node.textContent || '');
+    if (node.nodeType !== 1) return '';
+    if (node.tagName === 'IMG') {
+      const src = node.getAttribute('src') || '';
+      return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(src)
+        ? '<img src="' + src + '" alt="Captura de pantalla">' : '';
+    }
+    if (node.tagName === 'BR') return '<br>';
+    const inner = [...node.childNodes].map(walk).join('');
+    if (node.tagName === 'DIV' || node.tagName === 'P') return inner + '<br>';
+    return inner;
+  };
+  return [...editor.childNodes].map(walk).join('').replace(/(?:<br>)+$/,'').trim();
+}
+function renderRichComments(task) {
+  const host = document.getElementById('t-rich-comments');
+  if (!host) return;
+  host.innerHTML = '';
+  (task.commentEntries || []).forEach(entry => {
+    const wrap = document.createElement('div');
+    wrap.className = 'rich-comment';
+    const head = document.createElement('div');
+    head.className = 'rich-comment-head';
+    const date = document.createElement('span');
+    date.textContent = formatCommentDate(entry.date);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'rich-comment-delete';
+    remove.textContent = 'Eliminar';
+    remove.title = 'Eliminar esta actualización';
+    remove.onclick = () => {
+      if (!confirm('¿Eliminar esta actualización y sus capturas?')) return;
+      const current = currentBoard().tasks.find(t => t.id === editingTaskId);
+      if (!current) return;
+      current.commentEntries = (current.commentEntries || []).filter(x => x.id !== entry.id);
+      saveState(); renderRichComments(current);
+    };
+    head.append(date, remove);
+    const body = document.createElement('div');
+    body.className = 'rich-comment-body';
+    // Solo renderizamos el HTML permitido por escapeRichCommentHtml.
+    body.innerHTML = entry.html || '';
+    body.querySelectorAll('img').forEach(img => {
+      img.addEventListener('click', () => openCommentImage(img.src));
+    });
+    wrap.append(head, body);
+    host.appendChild(wrap);
+  });
+}
+function openCommentImage(src) {
+  const win = window.open('', '_blank');
+  if (!win) { toast('Habilitá las ventanas emergentes para ampliar la captura'); return; }
+  const img = win.document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'display:block;max-width:100%;height:auto;margin:auto';
+  win.document.body.style.background = '#181818';
+  win.document.body.appendChild(img);
+}
+async function compressCommentImage(blob) {
+  const bitmap = await createImageBitmap(blob);
+  const maxSide = 1300;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', 0.76);
+}
+function insertCommentImage(src) {
+  const input = document.getElementById('t-new-comment');
+  input.focus();
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = 'Captura de pantalla';
+  const sel = window.getSelection();
+  let range;
+  if (sel.rangeCount && input.contains(sel.anchorNode)) range = sel.getRangeAt(0);
+  else { range = document.createRange(); range.selectNodeContents(input); range.collapse(false); }
+  range.deleteContents();
+  range.insertNode(img);
+  const line = document.createElement('br');
+  img.after(line);
+  range.setStartAfter(line); range.collapse(true);
+  sel.removeAllRanges(); sel.addRange(range);
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+}
+async function handleCommentPaste(e) {
+  const items = [...(e.clipboardData?.items || [])];
+  const imageItems = items.filter(x => x.type.startsWith('image/'));
+  e.preventDefault();
+  if (imageItems.length) {
+    for (const item of imageItems) {
+      try {
+        const src = await compressCommentImage(item.getAsFile());
+        if (src.length > 750000) { toast('Captura demasiado grande. Probá con una imagen más pequeña.'); continue; }
+        insertCommentImage(src);
+      } catch (err) { console.error(err); toast('No se pudo pegar la captura'); }
+    }
+  } else {
+    const plain = e.clipboardData?.getData('text/plain') || '';
+    document.execCommand('insertText', false, plain);
+  }
+}
 function addDatedComment() {
   if (!editingTaskId) return;
   const input = document.getElementById('t-new-comment');
   const dateInput = document.getElementById('t-comment-date');
-  const history = document.getElementById('t-meeting-note');
-  if (!input || !history) return;
-
-  const comment = input.value.trim();
-  if (!comment) {
-    input.focus();
+  const task = currentBoard().tasks.find(t => t.id === editingTaskId);
+  if (!input || !task) return;
+  const html = escapeRichCommentHtml(input);
+  if (!html) { input.focus(); return; }
+  const date = dateInput?.value || todayISO();
+  if (!Array.isArray(task.commentEntries)) task.commentEntries = [];
+  const entry = { id: (crypto.randomUUID ? crypto.randomUUID() : 'comment-' + Date.now() + '-' + Math.random().toString(36).slice(2)), date, html };
+  task.commentEntries.push(entry);
+  try {
+    saveState();
+  } catch(err) {
+    task.commentEntries.pop();
+    console.error(err);
+    toast('No se pudo guardar: espacio de almacenamiento insuficiente. Usá menos capturas o más pequeñas.');
     return;
   }
-
-  const date = dateInput && dateInput.value ? dateInput.value : todayISO();
-  const entry = `[${formatCommentDate(date)}] ${comment}`;
-  const previous = history.value.trim();
-  history.value = previous ? `${previous}\n\n${entry}` : entry;
-  input.value = '';
+  input.innerHTML = '';
   if (dateInput) dateInput.value = todayISO();
-
-  commitTaskModalFields(false);
-  history.scrollTop = history.scrollHeight;
+  renderRichComments(task);
   input.focus();
 }
-
 const addCommentBtn = document.getElementById('t-add-comment');
 if (addCommentBtn) addCommentBtn.addEventListener('click', addDatedComment);
 const newCommentInput = document.getElementById('t-new-comment');
 if (newCommentInput) {
+  newCommentInput.addEventListener('paste', handleCommentPaste);
   newCommentInput.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      addDatedComment();
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); addDatedComment(); }
   });
 }
 
@@ -5367,6 +5576,7 @@ function commitTaskModalFields(rerender = false) {
   if (!editingTaskId) return;
   const t = currentBoard().tasks.find(x => x.id === editingTaskId);
   if (!t) return;
+  if (editingTaskId === pendingNewTaskId && isNewTaskDraftEmpty(t)) return;
   t.title = document.getElementById('t-title').value.trim() || '(sin título)';
   t.desc = document.getElementById('t-desc').value.trim();
   t.date = document.getElementById('t-date').value;
@@ -5404,7 +5614,7 @@ function commitTaskModalFields(rerender = false) {
   el.addEventListener('change', () => { if (idn === 't-date' || idn === 't-create-date') updateTaskDateCounters(); commitTaskModalFields(false); });
 });
 const saveBtn = document.getElementById('t-save');
-if (saveBtn) saveBtn.onclick = () => { commitTaskModalFields(true); closeTaskModal(); };
+if (saveBtn) saveBtn.onclick = () => { if (editingTaskId !== pendingNewTaskId) commitTaskModalFields(true); closeTaskModal(); };
 function deleteTaskById(taskId, ask = true) {
   if (!taskId) return;
   const b = currentBoard();
@@ -5547,15 +5757,19 @@ document.getElementById('t-delete').onclick = () => {
   deleteTaskById(editingTaskId, true);
 };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => {
-  if (editingTaskId) commitTaskModalFields(true);
+  if (editingTaskId && editingTaskId !== pendingNewTaskId) commitTaskModalFields(true);
   closeTaskModal();
   document.getElementById('minute-modal').classList.remove('open');
 });
 [taskModal, document.getElementById('minute-modal')].forEach(m => {
   m.addEventListener('click', e => {
     if (e.target === m) {
-      if (m === taskModal && editingTaskId) commitTaskModalFields(true);
-      m.classList.remove('open'); editingTaskId = null;
+      if (m === taskModal) {
+        if (editingTaskId && editingTaskId !== pendingNewTaskId) commitTaskModalFields(true);
+        closeTaskModal();
+      } else {
+        m.classList.remove('open');
+      }
     }
   });
 });
@@ -7252,7 +7466,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
 
   if (taskModal.classList.contains('open')) {
-    if (editingTaskId) commitTaskModalFields(true);
+    if (editingTaskId && editingTaskId !== pendingNewTaskId) commitTaskModalFields(true);
     closeTaskModal();
     e.preventDefault();
     return;
