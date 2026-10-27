@@ -4218,6 +4218,13 @@ function render() {
   const boardScrollerBefore = document.getElementById('board-main');
   const previousBoardScrollX = boardScrollerBefore ? boardScrollerBefore.scrollLeft : 0;
   const previousBoardScrollY = boardScrollerBefore ? boardScrollerBefore.scrollTop : 0;
+  // Cada columna tiene su propio desplazamiento vertical dentro de .cards.
+  // Guardarlo antes de reconstruir el tablero evita volver al principio al cerrar una tarea.
+  const previousColumnScrolls = new Map();
+  boardEl.querySelectorAll('.column[data-col-id]').forEach(column => {
+    const cards = column.querySelector('.cards');
+    if (cards) previousColumnScrolls.set(column.dataset.colId, cards.scrollTop);
+  });
   const board = currentBoard();
   if (syncDependencyStatuses(board)) saveState();
   document.getElementById('current-board-name').textContent = board.name;
@@ -4259,6 +4266,13 @@ function render() {
   };
   boardEl.appendChild(addCol);
 
+  // Restaurar el scroll interno de cada columna después del render.
+  boardEl.querySelectorAll('.column[data-col-id]').forEach(column => {
+    const cards = column.querySelector('.cards');
+    if (cards && previousColumnScrolls.has(column.dataset.colId)) {
+      cards.scrollTop = previousColumnScrolls.get(column.dataset.colId);
+    }
+  });
   updateSelectionBar();
   updateFilterResultCount();
   const boardScroller = document.getElementById('board-main');
@@ -4315,7 +4329,6 @@ function renderColumn(col) {
       </div>
       <div class="col-title">
         <input class="col-title-text" value="${escapeHtml(col.name)}" />
-        ${renderRegionBadge(col)}
         <span class="col-count">${allColTasks.length}</span>
       </div>
       <button class="col-menu" title="Opciones">
